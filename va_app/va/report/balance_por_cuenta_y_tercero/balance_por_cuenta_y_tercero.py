@@ -20,436 +20,145 @@ from erpnext.accounts.report.financial_statements import (
 )
 from erpnext.accounts.report.utils import convert_to_presentation_currency, get_currency
 
-value_fields = (
-	"opening_debit",
-	"opening_credit",
-	"debit",
-	"credit",
-	"closing_debit",
-	"closing_credit",
-)
+
+# This should be off on production
+ENABLE_DEVELOPMENT_LOGS = False
+
+
+# Hard coded definitions
+FIELD_NAME_ACCOUNTS = "account"
+FIELD_NAME_PARTY = "party"
+FIELD_NAME_GL_ENTRY = "gl_entry"
+FIELD_NAME_POSTING_DATE = "posting_date"
+FIELD_NAME_VOUCHER_NO = "voucher_no"
+FIELD_NAME_CURRENCY = "currency"
+FIELD_NAME_OPENING_DEBIT = "opening_debit"
+FIELD_NAME_OPENING_CREDIT = "opening_credit"
+FIELD_NAME_DEBIT = "debit"
+FIELD_NAME_CREDIT = "credit"
+FIELD_NAME_CLOSING_DEBIT = "closing_debit"
+FIELD_NAME_CLOSING_CREDIT = "closing_credit"
+CUSTOM_FIELD_NAME_GROUPING = "grouping"
+
+UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
+UNKNOWN_PARTY = "UNKNOWN_PARTY"
 
 
 def execute(filters=None):
-	validate_filters(filters)
-	data = get_data(filters)
-	columns = get_columns()
+	"""
+	This function provides the content required by ERPNext for the report.
+	"""
+	# validate_filters(filters)
+	data = get_report_data(filters)
+	columns = get_report_columns()
 	return columns, data
 
 
-def validate_filters(filters):
-	if not filters.fiscal_year:
-		frappe.throw(_("Fiscal Year {0} is required").format(filters.fiscal_year))
+def get_report_data(filters):
+	"""
+	Provide the data displayed by the report.
+	"""
 
-	fiscal_year = frappe.get_cached_value(
-		"Fiscal Year", filters.fiscal_year, ["year_start_date", "year_end_date"], as_dict=True
-	)
-	if not fiscal_year:
-		frappe.throw(_("Fiscal Year {0} does not exist").format(filters.fiscal_year))
-	else:
-		filters.year_start_date = getdate(fiscal_year.year_start_date)
-		filters.year_end_date = getdate(fiscal_year.year_end_date)
+	# We start by obtaining all the GL Entries on the database
+	# TODO: Filters are not yet implemented
 
-	if not filters.from_date:
-		filters.from_date = filters.year_start_date
+	order_by_statement = f"""order by {FIELD_NAME_ACCOUNTS}, {FIELD_NAME_POSTING_DATE}, creation"""
 
-	if not filters.to_date:
-		filters.to_date = filters.year_end_date
-
-	filters.from_date = getdate(filters.from_date)
-	filters.to_date = getdate(filters.to_date)
-
-	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date cannot be greater than To Date"))
-
-	if (filters.from_date < filters.year_start_date) or (filters.from_date > filters.year_end_date):
-		frappe.msgprint(
-			_("From Date should be within the Fiscal Year. Assuming From Date = {0}").format(
-				formatdate(filters.year_start_date)
-			)
-		)
-
-		filters.from_date = filters.year_start_date
-
-	if (filters.to_date < filters.year_start_date) or (filters.to_date > filters.year_end_date):
-		frappe.msgprint(
-			_("To Date should be within the Fiscal Year. Assuming To Date = {0}").format(
-				formatdate(filters.year_end_date)
-			)
-		)
-		filters.to_date = filters.year_end_date
-
-
-def get_data(filters):
-	accounts = frappe.db.sql(
-		"""select name, account_number, parent_account, account_name, root_type, report_type, lft, rgt
-
-		from `tabAccount` where company=%s order by lft""",
-		filters.company,
-		as_dict=True,
-	)
-	company_currency = filters.presentation_currency or erpnext.get_company_currency(filters.company)
-
-	if not accounts:
-		return None
-
-	accounts, accounts_by_name, parent_children_map = filter_accounts(accounts)
-
-	gl_entries_by_account = {}
-
-	opening_balances = get_opening_balances(filters)
-
-	# add filter inside list so that the query in financial_statements.py doesn't break
-	if filters.project:
-		filters.project = [filters.project]
-
-	set_gl_entries_by_account(
-		filters.company,
-		filters.from_date,
-		filters.to_date,
+	gl_entries = frappe.db.sql(
+		f"""
+		select
+			name as {FIELD_NAME_GL_ENTRY}, {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, party_type, {FIELD_NAME_PARTY},
+			{FIELD_NAME_DEBIT}, {FIELD_NAME_CREDIT},
+			voucher_type, voucher_subtype, {FIELD_NAME_VOUCHER_NO},
+			cost_center, project,
+			against_voucher_type, against_voucher, account_currency,
+			against, is_opening, creation
+		from `tabGL Entry`
+		where company=%(company)s
+		{order_by_statement}
+	""",
 		filters,
-		gl_entries_by_account,
-		root_lft=None,
-		root_rgt=None,
-		ignore_closing_entries=not flt(filters.with_period_closing_entry_for_current_period),
-		ignore_opening_entries=True,
+		as_dict=1,
 	)
+	if ENABLE_DEVELOPMENT_LOGS:
+		frappe.log("GL Entries from the Database")
+		frappe.log(gl_entries)
 
-	calculate_values(accounts, gl_entries_by_account, opening_balances, filters.get("show_net_values"))
-	accumulate_values_into_parents(accounts, accounts_by_name)
-
-	data = prepare_data(accounts, filters, parent_children_map, company_currency)
-	data = filter_out_zero_value_rows(
-		data, parent_children_map, show_zero_values=filters.get("show_zero_values")
-	)
-
-	return data
+	# The content obtained from the Database is reorganized to match the
+	# structure used by the report
+	got_form_remap = remap_database_content(db_results=gl_entries)
+	return got_form_remap
 
 
-def get_opening_balances(filters):
-	balance_sheet_opening = get_rootwise_opening_balances(filters, "Balance Sheet")
-	pl_opening = get_rootwise_opening_balances(filters, "Profit and Loss")
-
-	balance_sheet_opening.update(pl_opening)
-	return balance_sheet_opening
-
-
-def get_rootwise_opening_balances(filters, report_type):
-	gle = []
-
-	last_period_closing_voucher = ""
-	ignore_closing_balances = frappe.db.get_single_value(
-		"Accounts Settings", "ignore_account_closing_balance"
-	)
-
-	if not ignore_closing_balances:
-		last_period_closing_voucher = frappe.db.get_all(
-			"Period Closing Voucher",
-			filters={"docstatus": 1, "company": filters.company, "period_end_date": ("<", filters.from_date)},
-			fields=["period_end_date", "name"],
-			order_by="period_end_date desc",
-			limit=1,
-		)
-
-	accounting_dimensions = get_accounting_dimensions(as_list=False)
-
-	if last_period_closing_voucher:
-		gle = get_opening_balance(
-			"Account Closing Balance",
-			filters,
-			report_type,
-			accounting_dimensions,
-			period_closing_voucher=last_period_closing_voucher[0].name,
-		)
-
-		# Report getting generate from the mid of a fiscal year
-		if getdate(last_period_closing_voucher[0].period_end_date) < getdate(add_days(filters.from_date, -1)):
-			start_date = add_days(last_period_closing_voucher[0].period_end_date, 1)
-			gle += get_opening_balance(
-				"GL Entry", filters, report_type, accounting_dimensions, start_date=start_date
-			)
-	else:
-		gle = get_opening_balance("GL Entry", filters, report_type, accounting_dimensions)
-
-	opening = frappe._dict()
-	for d in gle:
-		opening.setdefault(
-			d.account,
-			{
-				"account": d.account,
-				"opening_debit": 0.0,
-				"opening_credit": 0.0,
-			},
-		)
-		opening[d.account]["opening_debit"] += flt(d.debit)
-		opening[d.account]["opening_credit"] += flt(d.credit)
-
-	return opening
-
-
-def get_opening_balance(
-	doctype, filters, report_type, accounting_dimensions, period_closing_voucher=None, start_date=None
-):
-	closing_balance = frappe.qb.DocType(doctype)
-	account = frappe.qb.DocType("Account")
-
-	opening_balance = (
-		frappe.qb.from_(closing_balance)
-		.select(
-			closing_balance.account,
-			closing_balance.account_currency,
-			Sum(closing_balance.debit).as_("debit"),
-			Sum(closing_balance.credit).as_("credit"),
-			Sum(closing_balance.debit_in_account_currency).as_("debit_in_account_currency"),
-			Sum(closing_balance.credit_in_account_currency).as_("credit_in_account_currency"),
-		)
-		.where(
-			(closing_balance.company == filters.company)
-			& (
-				closing_balance.account.isin(
-					frappe.qb.from_(account).select("name").where(account.report_type == report_type)
-				)
-			)
-		)
-		.groupby(closing_balance.account)
-	)
-
-	if period_closing_voucher:
-		opening_balance = opening_balance.where(
-			closing_balance.period_closing_voucher == period_closing_voucher
-		)
-	else:
-		if start_date:
-			opening_balance = opening_balance.where(
-				(closing_balance.posting_date >= start_date)
-				& (closing_balance.posting_date < filters.from_date)
-			)
-			opening_balance = opening_balance.where(closing_balance.is_opening == "No")
-		else:
-			opening_balance = opening_balance.where(
-				(closing_balance.posting_date < filters.from_date) | (closing_balance.is_opening == "Yes")
-			)
-
-	if doctype == "GL Entry":
-		opening_balance = opening_balance.where(closing_balance.is_cancelled == 0)
-
-	if (
-		not filters.show_unclosed_fy_pl_balances
-		and report_type == "Profit and Loss"
-		and doctype == "GL Entry"
-	):
-		opening_balance = opening_balance.where(closing_balance.posting_date >= filters.year_start_date)
-
-	if not flt(filters.with_period_closing_entry_for_opening):
-		if doctype == "Account Closing Balance":
-			opening_balance = opening_balance.where(closing_balance.is_period_closing_voucher_entry == 0)
-		else:
-			opening_balance = opening_balance.where(closing_balance.voucher_type != "Period Closing Voucher")
-
-	if filters.cost_center:
-		lft, rgt = frappe.db.get_value("Cost Center", filters.cost_center, ["lft", "rgt"])
-		cost_center = frappe.qb.DocType("Cost Center")
-		opening_balance = opening_balance.where(
-			closing_balance.cost_center.isin(
-				frappe.qb.from_(cost_center)
-				.select("name")
-				.where((cost_center.lft >= lft) & (cost_center.rgt <= rgt))
-			)
-		)
-
-	if filters.project:
-		opening_balance = opening_balance.where(closing_balance.project == filters.project)
-
-	if filters.get("include_default_book_entries"):
-		company_fb = frappe.get_cached_value("Company", filters.company, "default_finance_book")
-
-		if filters.finance_book and company_fb and cstr(filters.finance_book) != cstr(company_fb):
-			frappe.throw(_("To use a different finance book, please uncheck 'Include Default FB Entries'"))
-
-		opening_balance = opening_balance.where(
-			(closing_balance.finance_book.isin([cstr(filters.finance_book), cstr(company_fb), ""]))
-			| (closing_balance.finance_book.isnull())
-		)
-	else:
-		opening_balance = opening_balance.where(
-			(closing_balance.finance_book.isin([cstr(filters.finance_book), ""]))
-			| (closing_balance.finance_book.isnull())
-		)
-
-	if accounting_dimensions:
-		for dimension in accounting_dimensions:
-			if filters.get(dimension.fieldname):
-				if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
-					filters[dimension.fieldname] = get_dimension_with_children(
-						dimension.document_type, filters.get(dimension.fieldname)
-					)
-					opening_balance = opening_balance.where(
-						closing_balance[dimension.fieldname].isin(filters[dimension.fieldname])
-					)
-				else:
-					opening_balance = opening_balance.where(
-						closing_balance[dimension.fieldname].isin(filters[dimension.fieldname])
-					)
-
-	gle = opening_balance.run(as_dict=1)
-
-	if filters and filters.get("presentation_currency"):
-		convert_to_presentation_currency(gle, get_currency(filters))
-
-	return gle
-
-
-def calculate_values(accounts, gl_entries_by_account, opening_balances, show_net_values):
-	init = {
-		"opening_debit": 0.0,
-		"opening_credit": 0.0,
-		"debit": 0.0,
-		"credit": 0.0,
-		"closing_debit": 0.0,
-		"closing_credit": 0.0,
-	}
-
-	for d in accounts:
-		d.update(init.copy())
-
-		# add opening
-		d["opening_debit"] = opening_balances.get(d.name, {}).get("opening_debit", 0)
-		d["opening_credit"] = opening_balances.get(d.name, {}).get("opening_credit", 0)
-
-		for entry in gl_entries_by_account.get(d.name, []):
-			if cstr(entry.is_opening) != "Yes":
-				d["debit"] += flt(entry.debit)
-				d["credit"] += flt(entry.credit)
-
-		d["closing_debit"] = d["opening_debit"] + d["debit"]
-		d["closing_credit"] = d["opening_credit"] + d["credit"]
-
-		if show_net_values:
-			prepare_opening_closing(d)
-
-
-def calculate_total_row(accounts, company_currency):
-	total_row = {
-		"account": "'" + _("Total") + "'",
-		"account_name": "'" + _("Total") + "'",
-		"warn_if_negative": True,
-		"opening_debit": 0.0,
-		"opening_credit": 0.0,
-		"debit": 0.0,
-		"credit": 0.0,
-		"closing_debit": 0.0,
-		"closing_credit": 0.0,
-		"parent_account": None,
-		"indent": 0,
-		"has_value": True,
-		"currency": company_currency,
-	}
-
-	for d in accounts:
-		if not d.parent_account:
-			for field in value_fields:
-				total_row[field] += d[field]
-
-	return total_row
-
-
-def accumulate_values_into_parents(accounts, accounts_by_name):
-	for d in reversed(accounts):
-		if d.parent_account:
-			for key in value_fields:
-				accounts_by_name[d.parent_account][key] += d[key]
-
-
-def prepare_data(accounts, filters, parent_children_map, company_currency):
-	data = []
-
-	for d in accounts:
-		# Prepare opening closing for group account
-		if parent_children_map.get(d.account) and filters.get("show_net_values"):
-			prepare_opening_closing(d)
-
-		has_value = False
-		row = {
-			"account": d.name,
-			"parent_account": d.parent_account,
-			"indent": d.indent,
-			"from_date": filters.from_date,
-			"to_date": filters.to_date,
-			"currency": company_currency,
-			"account_name": (
-				f"{d.account_number} - {d.account_name}" if d.account_number else d.account_name
-			),
-		}
-
-		for key in value_fields:
-			row[key] = flt(d.get(key, 0.0), 3)
-
-			if abs(row[key]) >= 0.005:
-				# ignore zero values
-				has_value = True
-
-		row["has_value"] = has_value
-		data.append(row)
-
-	total_row = calculate_total_row(accounts, company_currency)
-	data.extend([{}, total_row])
-
-	return data
-
-
-def get_columns():
+def get_report_columns():
+	"""
+	Provide the columns used by the report.
+	"""
 	return [
 		{
-			"fieldname": "account",
-			"label": _("Account"),
-			"fieldtype": "Link",
-			"options": "Account",
+			"fieldname": CUSTOM_FIELD_NAME_GROUPING,
+			"label": _("Account and Party"),
+			"fieldtype": "Data",
+			# "options": "Account",
 			"width": 300,
 		},
 		{
-			"fieldname": "currency",
+			"fieldname": FIELD_NAME_POSTING_DATE,
+			"label": _("Posting Date"),
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
+			"fieldname": FIELD_NAME_VOUCHER_NO,
+			"label": _("Voucher"),
+			"fieldtype": "Data",
+			# "options": "Voucher",
+			"width": 200,
+		},
+		{
+			"fieldname": FIELD_NAME_CURRENCY,
 			"label": _("Currency"),
 			"fieldtype": "Link",
 			"options": "Currency",
 			"hidden": 1,
 		},
 		{
-			"fieldname": "opening_debit",
+			"fieldname": FIELD_NAME_OPENING_DEBIT,
 			"label": _("Opening (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 120,
 		},
 		{
-			"fieldname": "opening_credit",
+			"fieldname": FIELD_NAME_OPENING_CREDIT,
 			"label": _("Opening (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 120,
 		},
 		{
-			"fieldname": "debit",
+			"fieldname": FIELD_NAME_DEBIT,
 			"label": _("Debit"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 120,
 		},
 		{
-			"fieldname": "credit",
+			"fieldname": FIELD_NAME_CREDIT,
 			"label": _("Credit"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 120,
 		},
 		{
-			"fieldname": "closing_debit",
+			"fieldname": FIELD_NAME_CLOSING_DEBIT,
 			"label": _("Closing (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 120,
 		},
 		{
-			"fieldname": "closing_credit",
+			"fieldname": FIELD_NAME_CLOSING_CREDIT,
 			"label": _("Closing (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
@@ -458,16 +167,93 @@ def get_columns():
 	]
 
 
-def prepare_opening_closing(row):
-	dr_or_cr = "debit" if row["root_type"] in ["Asset", "Equity", "Expense"] else "credit"
-	reverse_dr_or_cr = "credit" if dr_or_cr == "debit" else "debit"
+def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
+	"""
+	Takes the DB results and reorganizes them to match the required structure
+	for the Report which in this case provides a hierarchy that groups the 
+	the General Ledger Entries according to:
 
-	for col_type in ["opening", "closing"]:
-		valid_col = col_type + "_" + dr_or_cr
-		reverse_col = col_type + "_" + reverse_dr_or_cr
-		row[valid_col] -= row[reverse_col]
-		if row[valid_col] < 0:
-			row[reverse_col] = abs(row[valid_col])
-			row[valid_col] = 0.0
-		else:
-			row[reverse_col] = 0.0
+			`Account : Party` > GL record with data about transactions.
+
+	The Plan:
+
+	We have to return a list of dicts, each containing key pairs consisting of
+	field names and values.
+
+	To speed the process, we first use a dict that groups the accounts and
+	parties	to store the GL results.
+
+	Once that is completed, we process that dict as a list to return the
+	fields requested.
+	"""
+
+	temporal_grouping_dict: dict[str, dict[str, list[str, dict[str, object]]]] = {}
+
+	for single_gl_entry in db_results:
+
+		# Make sure the account key exists on our temporal
+		current_account = single_gl_entry.get(FIELD_NAME_ACCOUNTS)
+		if current_account is None:
+			current_account = UNKNOWN_ACCOUNT
+		if current_account not in temporal_grouping_dict:
+			temporal_grouping_dict[current_account] = {}
+
+		# Make sure the party exists on out temporal
+		current_party = single_gl_entry.get(FIELD_NAME_PARTY)
+		if current_party is None:
+			current_party = UNKNOWN_PARTY
+		if current_party not in temporal_grouping_dict[current_account]:
+			temporal_grouping_dict[current_account][current_party] = []
+
+		# Build the record to append to the dict
+		record_constructed = {
+			FIELD_NAME_GL_ENTRY: single_gl_entry.get(FIELD_NAME_GL_ENTRY),
+			FIELD_NAME_POSTING_DATE: single_gl_entry.get(FIELD_NAME_POSTING_DATE),
+			FIELD_NAME_VOUCHER_NO: single_gl_entry.get(FIELD_NAME_VOUCHER_NO),
+			FIELD_NAME_CURRENCY: single_gl_entry.get(FIELD_NAME_CURRENCY),
+			FIELD_NAME_OPENING_DEBIT: single_gl_entry.get(FIELD_NAME_OPENING_DEBIT),
+			FIELD_NAME_OPENING_CREDIT: single_gl_entry.get(FIELD_NAME_OPENING_CREDIT),
+			FIELD_NAME_DEBIT: single_gl_entry.get(FIELD_NAME_DEBIT),
+			FIELD_NAME_CREDIT: single_gl_entry.get(FIELD_NAME_CREDIT),
+			FIELD_NAME_CLOSING_DEBIT: single_gl_entry.get(FIELD_NAME_CLOSING_DEBIT),
+			FIELD_NAME_CLOSING_CREDIT: single_gl_entry.get(FIELD_NAME_CLOSING_CREDIT),
+		}
+
+		if ENABLE_DEVELOPMENT_LOGS:
+			frappe.log(f"Record to append to account: {current_account} and Party: {current_party}")
+			frappe.log(record_constructed)
+
+		# Append the record
+		temporal_grouping_dict[current_account][current_party].append(record_constructed)
+		if ENABLE_DEVELOPMENT_LOGS:
+			frappe.log(f"Current content for account: {current_account} and Party: {current_party}")
+			frappe.log(temporal_grouping_dict[current_account][current_party])
+
+	if ENABLE_DEVELOPMENT_LOGS:
+		frappe.log("Dict to process")
+		frappe.log(temporal_grouping_dict)
+
+	# Process the results to obtain a list
+	list_to_return = []
+	for single_account_key in temporal_grouping_dict:
+		if ENABLE_DEVELOPMENT_LOGS:
+			frappe.log("Single Account")
+			frappe.log(single_account_key)
+		for single_party_key in temporal_grouping_dict[single_account_key]:
+			if ENABLE_DEVELOPMENT_LOGS:
+				frappe.log("Single party")
+				frappe.log(single_party_key)
+			for single_gl_entry in temporal_grouping_dict[single_account_key][single_party_key]:
+				grouping_field_value = single_account_key + ":" + single_party_key
+				single_gl_entry[CUSTOM_FIELD_NAME_GROUPING] = grouping_field_value
+				if ENABLE_DEVELOPMENT_LOGS:
+					frappe.log("Tenemos esto para adicionar")
+					frappe.log(single_gl_entry)
+				list_to_return.append(
+					single_gl_entry,
+				)
+	if ENABLE_DEVELOPMENT_LOGS:
+		frappe.log("List of dicts")
+		frappe.log(list_to_return)
+
+	return list_to_return
