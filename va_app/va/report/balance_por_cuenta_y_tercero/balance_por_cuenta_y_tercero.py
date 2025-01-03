@@ -1,4 +1,4 @@
-# Copyright (c) 2024, VIDAL & ASTUDILLO Ltda and contributors
+# Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
@@ -26,10 +26,15 @@ ENABLE_DEVELOPMENT_LOGS = False
 
 
 # Hard coded definitions
+CUSTOM_FIELD_NAME_GROUPING = "grouping"
 FIELD_NAME_ACCOUNTS = "account"
-FIELD_NAME_PARTY = "party"
-FIELD_NAME_GL_ENTRY = "gl_entry"
+FIELD_NAME_PARTY_ON_GL_ENTRY = "party"
+FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY = "party_type"
+CUSTOM_FIELD_NAME_PARTY_ON_RESULT = "party_selected"
+CUSTOM_FIELD_NAME_GL_ENTRY = "gl_entry"
 FIELD_NAME_POSTING_DATE = "posting_date"
+FIELD_NAME_VOUCHER_TYPE = "voucher_type"
+FIELD_NAME_VOUCHER_SUBTYPE = "voucher_subtype"
 FIELD_NAME_VOUCHER_NO = "voucher_no"
 FIELD_NAME_CURRENCY = "currency"
 FIELD_NAME_OPENING_DEBIT = "opening_debit"
@@ -38,7 +43,9 @@ FIELD_NAME_DEBIT = "debit"
 FIELD_NAME_CREDIT = "credit"
 FIELD_NAME_CLOSING_DEBIT = "closing_debit"
 FIELD_NAME_CLOSING_CREDIT = "closing_credit"
-CUSTOM_FIELD_NAME_GROUPING = "grouping"
+
+EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
+SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
 
 UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
 UNKNOWN_PARTY = "UNKNOWN_PARTY"
@@ -67,9 +74,9 @@ def get_report_data(filters):
 	gl_entries = frappe.db.sql(
 		f"""
 		select
-			name as {FIELD_NAME_GL_ENTRY}, {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, party_type, {FIELD_NAME_PARTY},
+			name as {CUSTOM_FIELD_NAME_GL_ENTRY}, {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, {FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY}, {FIELD_NAME_PARTY_ON_GL_ENTRY},
 			{FIELD_NAME_DEBIT}, {FIELD_NAME_CREDIT},
-			voucher_type, voucher_subtype, {FIELD_NAME_VOUCHER_NO},
+			{FIELD_NAME_VOUCHER_TYPE}, {FIELD_NAME_VOUCHER_SUBTYPE}, {FIELD_NAME_VOUCHER_NO},
 			cost_center, project,
 			against_voucher_type, against_voucher, account_currency,
 			against, is_opening, creation
@@ -97,16 +104,39 @@ def get_report_columns():
 	return [
 		{
 			"fieldname": CUSTOM_FIELD_NAME_GROUPING,
-			"label": _("Account and Party"),
+			"label": _("Account and Party on Voucher"),
 			"fieldtype": "Data",
 			# "options": "Account",
-			"width": 300,
+			"width": 350,
 		},
 		{
 			"fieldname": FIELD_NAME_POSTING_DATE,
 			"label": _("Posting Date"),
 			"fieldtype": "Data",
 			"width": 120,
+		},
+		{
+			"fieldname": FIELD_NAME_PARTY_ON_GL_ENTRY,
+			"label": _("Party on GL"),
+			"fieldtype": "Data",
+			"width": 150,
+			"hidden": 1,
+		},
+		{
+			"fieldname": FIELD_NAME_VOUCHER_TYPE,
+			"label": _("Voucher Type"),
+			"fieldtype": "Data",
+			# "options": "Voucher",
+			"width": 200,
+			"hidden": 1,
+		},
+		{
+			"fieldname": FIELD_NAME_VOUCHER_SUBTYPE,
+			"label": _("Voucher Subtype"),
+			"fieldtype": "Data",
+			# "options": "Voucher",
+			"width": 200,
+			"hidden": 1,
 		},
 		{
 			"fieldname": FIELD_NAME_VOUCHER_NO,
@@ -127,42 +157,42 @@ def get_report_columns():
 			"label": _("Opening (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_OPENING_CREDIT,
 			"label": _("Opening (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_DEBIT,
 			"label": _("Debit"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_CREDIT,
 			"label": _("Credit"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_CLOSING_DEBIT,
 			"label": _("Closing (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_CLOSING_CREDIT,
 			"label": _("Closing (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
-			"width": 120,
+			"width": 150,
 		},
 	]
 
@@ -198,18 +228,54 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		if current_account not in temporal_grouping_dict:
 			temporal_grouping_dict[current_account] = {}
 
-		# Make sure the party exists on out temporal
-		current_party = single_gl_entry.get(FIELD_NAME_PARTY)
-		if current_party is None:
-			current_party = UNKNOWN_PARTY
-		if current_party not in temporal_grouping_dict[current_account]:
-			temporal_grouping_dict[current_account][current_party] = []
+		# Determine the party based on the voucher
+		current_voucher_type = single_gl_entry.get(FIELD_NAME_VOUCHER_TYPE)
+		current_voucher_no = single_gl_entry.get(FIELD_NAME_VOUCHER_NO)
+		current_party_type_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY)
+		current_party_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY)
+
+		match current_voucher_type:
+			case 'Journal Entry':
+				current_selected_party = None
+			case 'Payment Entry':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+			case 'Purchase Invoice':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+			case 'Purchase Receipt':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+			case 'Sales Invoice':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
+			case 'Delivery Note':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
+			case 'Stock Entry':
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+			case _:
+				current_selected_party = None
+
+		if current_selected_party is None:
+			# Check if the Party fiend on the GL is set
+			if current_party_type_from_gl is not None and current_party_from_gl is not None:
+				match current_party_type_from_gl:
+					case 'Employee':
+						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, EMPLOYEE_FIELD_NAME_EMPLOYEE)
+					case 'Shareholder':
+						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
+					case _:
+						current_selected_party = current_party_from_gl
+			else:
+				current_selected_party = UNKNOWN_PARTY
+
+		# Make sure the party exists on our temporal
+		if current_selected_party not in temporal_grouping_dict[current_account]:
+			temporal_grouping_dict[current_account][current_selected_party] = []
 
 		# Build the record to append to the dict
 		record_constructed = {
-			FIELD_NAME_GL_ENTRY: single_gl_entry.get(FIELD_NAME_GL_ENTRY),
+			CUSTOM_FIELD_NAME_GL_ENTRY: single_gl_entry.get(CUSTOM_FIELD_NAME_GL_ENTRY),
+			FIELD_NAME_PARTY_ON_GL_ENTRY: single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY),
 			FIELD_NAME_POSTING_DATE: single_gl_entry.get(FIELD_NAME_POSTING_DATE),
-			FIELD_NAME_VOUCHER_NO: single_gl_entry.get(FIELD_NAME_VOUCHER_NO),
+			FIELD_NAME_VOUCHER_TYPE: current_voucher_type,
+			FIELD_NAME_VOUCHER_NO: current_voucher_no,
 			FIELD_NAME_CURRENCY: single_gl_entry.get(FIELD_NAME_CURRENCY),
 			FIELD_NAME_OPENING_DEBIT: single_gl_entry.get(FIELD_NAME_OPENING_DEBIT),
 			FIELD_NAME_OPENING_CREDIT: single_gl_entry.get(FIELD_NAME_OPENING_CREDIT),
@@ -220,14 +286,14 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		}
 
 		if ENABLE_DEVELOPMENT_LOGS:
-			frappe.log(f"Record to append to account: {current_account} and Party: {current_party}")
+			frappe.log(f"Record to append to account: {current_account} and Party: {current_selected_party}")
 			frappe.log(record_constructed)
 
 		# Append the record
-		temporal_grouping_dict[current_account][current_party].append(record_constructed)
+		temporal_grouping_dict[current_account][current_selected_party].append(record_constructed)
 		if ENABLE_DEVELOPMENT_LOGS:
-			frappe.log(f"Current content for account: {current_account} and Party: {current_party}")
-			frappe.log(temporal_grouping_dict[current_account][current_party])
+			frappe.log(f"Current content for account: {current_account} and Party: {current_selected_party}")
+			frappe.log(temporal_grouping_dict[current_account][current_selected_party])
 
 	if ENABLE_DEVELOPMENT_LOGS:
 		frappe.log("Dict to process")
@@ -244,10 +310,10 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 				frappe.log("Single party")
 				frappe.log(single_party_key)
 			for single_gl_entry in temporal_grouping_dict[single_account_key][single_party_key]:
-				grouping_field_value = single_account_key + ":" + single_party_key
+				grouping_field_value = single_account_key + ": " + single_party_key
 				single_gl_entry[CUSTOM_FIELD_NAME_GROUPING] = grouping_field_value
 				if ENABLE_DEVELOPMENT_LOGS:
-					frappe.log("Tenemos esto para adicionar")
+					frappe.log("This is the updated GL Entry to append to the resulting list")
 					frappe.log(single_gl_entry)
 				list_to_return.append(
 					single_gl_entry,
