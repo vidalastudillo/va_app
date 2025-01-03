@@ -107,13 +107,13 @@ def get_report_columns():
 			"label": _("Account and Party on Voucher"),
 			"fieldtype": "Data",
 			# "options": "Account",
-			"width": 350,
+			"width": 320,
 		},
 		{
-			"fieldname": FIELD_NAME_POSTING_DATE,
-			"label": _("Posting Date"),
+			"fieldname": CUSTOM_FIELD_NAME_PARTY_ON_RESULT,
+			"label": _("Party on Voucher"),
 			"fieldtype": "Data",
-			"width": 120,
+			"width": 150,
 		},
 		{
 			"fieldname": FIELD_NAME_PARTY_ON_GL_ENTRY,
@@ -121,6 +121,12 @@ def get_report_columns():
 			"fieldtype": "Data",
 			"width": 150,
 			"hidden": 1,
+		},
+		{
+			"fieldname": FIELD_NAME_POSTING_DATE,
+			"label": _("Posting Date"),
+			"fieldtype": "Data",
+			"width": 120,
 		},
 		{
 			"fieldname": FIELD_NAME_VOUCHER_TYPE,
@@ -271,8 +277,8 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 
 		# Build the record to append to the dict
 		record_constructed = {
-			CUSTOM_FIELD_NAME_GL_ENTRY: single_gl_entry.get(CUSTOM_FIELD_NAME_GL_ENTRY),
 			FIELD_NAME_PARTY_ON_GL_ENTRY: single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY),
+			CUSTOM_FIELD_NAME_GL_ENTRY: single_gl_entry.get(CUSTOM_FIELD_NAME_GL_ENTRY),
 			FIELD_NAME_POSTING_DATE: single_gl_entry.get(FIELD_NAME_POSTING_DATE),
 			FIELD_NAME_VOUCHER_TYPE: current_voucher_type,
 			FIELD_NAME_VOUCHER_NO: current_voucher_no,
@@ -310,8 +316,12 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 				frappe.log("Single party")
 				frappe.log(single_party_key)
 			for single_gl_entry in temporal_grouping_dict[single_account_key][single_party_key]:
+
 				grouping_field_value = single_account_key + ": " + single_party_key
+
 				single_gl_entry[CUSTOM_FIELD_NAME_GROUPING] = grouping_field_value
+				single_gl_entry[CUSTOM_FIELD_NAME_PARTY_ON_RESULT] = single_party_key
+
 				if ENABLE_DEVELOPMENT_LOGS:
 					frappe.log("This is the updated GL Entry to append to the resulting list")
 					frappe.log(single_gl_entry)
