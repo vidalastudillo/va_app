@@ -147,8 +147,8 @@ def get_report_columns():
 		{
 			"fieldname": FIELD_NAME_VOUCHER_NO,
 			"label": _("Voucher"),
-			"fieldtype": "Data",
-			# "options": "Voucher",
+			"fieldtype": "Dynamic Link",
+			"options": "voucher_type",
 			"width": 200,
 		},
 		{
