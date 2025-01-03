@@ -106,7 +106,6 @@ def get_report_columns():
 			"fieldname": CUSTOM_FIELD_NAME_GROUPING,
 			"label": _("Account and Party on Voucher"),
 			"fieldtype": "Data",
-			# "options": "Account",
 			"width": 320,
 		},
 		{
@@ -132,7 +131,6 @@ def get_report_columns():
 			"fieldname": FIELD_NAME_VOUCHER_TYPE,
 			"label": _("Voucher Type"),
 			"fieldtype": "Data",
-			# "options": "Voucher",
 			"width": 200,
 			"hidden": 1,
 		},
@@ -140,7 +138,6 @@ def get_report_columns():
 			"fieldname": FIELD_NAME_VOUCHER_SUBTYPE,
 			"label": _("Voucher Subtype"),
 			"fieldtype": "Data",
-			# "options": "Voucher",
 			"width": 200,
 			"hidden": 1,
 		},
