@@ -44,6 +44,7 @@ FIELD_NAME_CREDIT = "credit"
 FIELD_NAME_CLOSING_DEBIT = "closing_debit"
 FIELD_NAME_CLOSING_CREDIT = "closing_credit"
 
+JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM = "pay_to_recd_from"
 PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
 EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
 SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
@@ -241,7 +242,8 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		match current_voucher_type:
 
 			case 'Journal Entry':
-				current_selected_party = None
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM)
+
 			case 'Payment Entry':
 
 				# Payment Entry uses the field `party` to identify them, but the content of that field needs to be evaluated depending on the `Party type`
