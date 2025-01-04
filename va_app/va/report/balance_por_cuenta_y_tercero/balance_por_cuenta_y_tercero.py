@@ -44,6 +44,8 @@ FIELD_NAME_CREDIT = "credit"
 FIELD_NAME_CLOSING_DEBIT = "closing_debit"
 FIELD_NAME_CLOSING_CREDIT = "closing_credit"
 
+JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM = "pay_to_recd_from"
+PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
 EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
 SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
 
@@ -66,7 +68,7 @@ def get_report_data(filters):
 	Provide the data displayed by the report.
 	"""
 
-	# We start by obtaining all the GL Entries on the database
+	# First, we obtain all the GL Entries on the database
 	# TODO: Filters are not yet implemented
 
 	order_by_statement = f"""order by {FIELD_NAME_ACCOUNTS}, {FIELD_NAME_POSTING_DATE}, creation"""
@@ -238,10 +240,25 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		current_party_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY)
 
 		match current_voucher_type:
+
 			case 'Journal Entry':
-				current_selected_party = None
+				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM)
+
 			case 'Payment Entry':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+
+				# Payment Entry uses the field `party` to identify them, but the content of that field needs to be evaluated depending on the `Party type`
+				# to differentiate the codes used by `Employee` and `Shareholder` as opposed to the complete names used by the other types.
+				current_party_type_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, PAYMENT_FIELD_NAME_PARTY_TYPE)
+				current_party_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+
+				match current_party_type_from_payment_entry:
+					case 'Employee':
+						current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, EMPLOYEE_FIELD_NAME_EMPLOYEE)
+					case 'Shareholder':
+						current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
+					case _:  # Supplier and Customer use their name instead of a code
+						current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+
 			case 'Purchase Invoice':
 				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
 			case 'Purchase Receipt':
@@ -258,7 +275,9 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		if current_selected_party is None:
 			# Check if the Party fiend on the GL is set
 			if current_party_type_from_gl is not None and current_party_from_gl is not None:
+
 				match current_party_type_from_gl:
+
 					case 'Employee':
 						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, EMPLOYEE_FIELD_NAME_EMPLOYEE)
 					case 'Shareholder':
