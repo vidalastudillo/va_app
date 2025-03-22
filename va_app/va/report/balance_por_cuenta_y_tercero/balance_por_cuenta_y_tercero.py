@@ -248,6 +248,9 @@ def aux_build_dian_tercero_info(
 	Full Name from the DIAN terceros table.
 	"""
 
+	if nit is None or nit == "":
+		return UNKNOWN_PARTY
+
 	# Take the information about that tercero from the DIAN Records
 	current_formal_name = frappe.db.get_value(DIAN_TERCERO_DOCTYPE_NAME, nit, DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO) or ""
 
