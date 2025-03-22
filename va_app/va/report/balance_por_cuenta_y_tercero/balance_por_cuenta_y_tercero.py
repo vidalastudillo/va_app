@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-# 2025-03-21
+# 2025-03-22
 
 import frappe
 from frappe import _
@@ -55,12 +55,10 @@ DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO = "nombre_completo"
 # Employee
 EMPLOYEE_DOCTYPE_NAME = "Employee"
 EMPLOYEE_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
 
 # Shareholder
 SHAREHOLDER_DOCTYPE_NAME = "Shareholder"
 SHAREHOLDER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
 
 # Customer
 CUSTOMER_DOCTYPE_NAME = "Customer"
@@ -242,8 +240,6 @@ def get_report_columns():
 	]
 
 
-
-
 def aux_build_dian_tercero_info(
 		nit: str,
 	) -> str:
@@ -260,7 +256,7 @@ def aux_build_dian_tercero_info(
 	return current_selected_party
 
 
-def aux_get_dian_tercero_info_for_party_type(
+def aux_get_dian_tercero_info_for_party(
 		party_type: str,
 		party: str,
 	) -> str:
@@ -269,7 +265,10 @@ def aux_get_dian_tercero_info_for_party_type(
 	Full Name from the DIAN terceros table.
 	"""
 
+	# Define fields to use to retrieve information from the DocType
 	match party_type:
+		case '*SpecialCaseTypeDIAN*':
+			selected_doctype = DIAN_TERCERO_DOCTYPE_NAME
 		case 'Employee':
 			selected_doctype = EMPLOYEE_DOCTYPE_NAME
 			selected_field_for_party = EMPLOYEE_FIELD_NAME_DIAN_TERCERO
@@ -285,8 +284,14 @@ def aux_get_dian_tercero_info_for_party_type(
 		case _:
 			return UNKNOWN_PARTY
 
-	# Take the ID of the tercero (NIT) and use it to retrive its info
-	current_nit = frappe.db.get_value(selected_doctype, party, selected_field_for_party) or ""
+	# Determine the NIT for the Party
+	match party_type:
+		case '*SpecialCaseTypeDIAN*':
+			current_nit = party
+		case _:
+			current_nit = frappe.db.get_value(selected_doctype, party, selected_field_for_party) or ""
+
+	# Build the response
 	current_selected_party = aux_build_dian_tercero_info(
 		nit=current_nit,
 	)
@@ -303,28 +308,45 @@ def aux_get_dian_tercero_info_from_doctype(
 	data is retrieved from the DIAN terceros table.
 	"""
 
+	# Values other than None means the Document may have multiple Party Types
+	retrieve_party_type_fieldname = None
+
 	match doc_type:
 		case 'Journal Entry':
+			selected_party_type = '*SpecialCaseTypeDIAN*'
 			selected_field_name_for_party = JOURNAL_FIELD_NAME_DIAN_TERCERO
 		case 'Payment Entry':
+			retrieve_party_type_fieldname = PAYMENT_FIELD_NAME_PARTY_TYPE
 			selected_field_name_for_party = PAYMENT_FIELD_NAME_PARTY
 		case 'Purchase Invoice':
+			selected_party_type = 'Supplier'
 			selected_field_name_for_party = PURCHASE_INVOICE_FIELD_NAME_PARTY
 		case 'Purchase Receipt':
+			selected_party_type = 'Supplier'
 			selected_field_name_for_party = PURCHASE_RECEIPT_FIELD_NAME_PARTY
 		case 'Sales Invoice':
+			selected_party_type = 'Customer'
 			selected_field_name_for_party = SALES_INVOICE_FIELD_NAME_PARTY
 		case 'Delivery Note':
+			selected_party_type = 'Customer'
 			selected_field_name_for_party = DELIVERY_NOTE_FIELD_NAME_PARTY
 		case 'Stock Entry':
+			selected_party_type = 'Supplier'
 			selected_field_name_for_party = STOCK_ENTRY_FIELD_NAME_PARTY
 		case _:
 			return UNKNOWN_PARTY
 
+	# For the cases that the Party Type is yet to be determined
+	if retrieve_party_type_fieldname is not None:
+		selected_party_type = frappe.db.get_value(doc_type, doc_id, retrieve_party_type_fieldname)
+
+	# Retrieve the Party from the DocType
+	selected_party = frappe.db.get_value(doc_type, doc_id, selected_field_name_for_party) or ""
+
 	# Take the ID of the tercero (NIT)
-	current_nit = frappe.db.get_value(doc_type, doc_id, selected_field_name_for_party) or ""
-	current_selected_party = aux_build_dian_tercero_info(
-		nit=current_nit,
+	current_selected_party = aux_get_dian_tercero_info_for_party(
+		party_type=selected_party_type,
+		party=selected_party,
 	)
 	return current_selected_party
 
@@ -383,7 +405,7 @@ def remap_database_content(
 			and current_party_from_gl is not None \
 			and current_party_from_gl != '':
 
-			current_selected_party = aux_get_dian_tercero_info_for_party_type(
+			current_selected_party = aux_get_dian_tercero_info_for_party(
 				party_type=current_party_type_from_gl,
 				party=current_party_from_gl,
 			)
