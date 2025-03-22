@@ -25,7 +25,7 @@ from erpnext.accounts.report.utils import convert_to_presentation_currency, get_
 ENABLE_DEVELOPMENT_LOGS = False
 
 
-# Hard coded definitions
+# Fields on GL Entry Query
 CUSTOM_FIELD_NAME_GROUPING = "grouping"
 FIELD_NAME_ACCOUNTS = "account"
 FIELD_NAME_PARTY_ON_GL_ENTRY = "party"
@@ -44,18 +44,37 @@ FIELD_NAME_CREDIT = "credit"
 FIELD_NAME_CLOSING_DEBIT = "closing_debit"
 FIELD_NAME_CLOSING_CREDIT = "closing_credit"
 
-JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_tercero_dian"
-JOURNAL_FIELD_NAME_DIAN_FULL_NAME = "custom_tercero_dian_nombre_data"  # Cambiar una vez resuelva el asunto del Nombre Completo
+# Unknowns
+UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
+UNKNOWN_PARTY = "UNKNOWN_PARTY"
 
-PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
-EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
-SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
-
+# DIAN tercero
 DIAN_TERCERO_DOCTYPE_NAME = "DIAN terceros"
 DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO = "nombre_completo"
 
-UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
-UNKNOWN_PARTY = "UNKNOWN_PARTY"
+# Employee
+EMPLOYEE_DOCTYPE_NAME = "Employee"
+EMPLOYEE_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
+EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
+
+# Shareholder
+SHAREHOLDER_DOCTYPE_NAME = "Shareholder"
+SHAREHOLDER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
+SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
+
+# Customer
+CUSTOMER_DOCTYPE_NAME = "Customer"
+CUSTOMER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
+
+# Supplier
+SUPPLIER_DOCTYPE_NAME = "Supplier"
+SUPPLIER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
+
+# Journal fields
+JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_tercero_dian"  # Cambiar una vez resuelto nombre definitivo
+
+# Payment fields
+PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
 
 
 def execute(filters=None):
@@ -207,28 +226,79 @@ def get_report_columns():
 	]
 
 
-def aux_get_selected_party(
-		current_voucher_type: str,
-		current_voucher_no: str,
-		field_name_for_party: str,
+
+
+def aux_build_dian_tercero_info(
+		nit: str,
 	) -> str:
 	"""
-	Provides an string that identifies the party using their formal NIT and
-	Full Name.
+	Returns a string that identifies the party using their formal NIT and
+	Full Name from the DIAN terceros table.
 	"""
-	# Take the ID of the tercero (NIT)
-
-	current_nit = frappe.db.get_value(current_voucher_type, current_voucher_no, field_name_for_party) or ""
 
 	# Take the information about that tercero from the DIAN Records
-	current_formal_name = frappe.db.get_value(DIAN_TERCERO_DOCTYPE_NAME, current_nit, DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO) or ""
+	current_formal_name = frappe.db.get_value(DIAN_TERCERO_DOCTYPE_NAME, nit, DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO) or ""
 
 	joiner = ": "
-	current_selected_party = joiner.join([current_nit, current_formal_name])
+	current_selected_party = joiner.join([nit, current_formal_name])
 	return current_selected_party
 
 
-def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
+def aux_get_dian_tercero_info_for_party_type(
+		party_type: str,
+		party: str,
+	) -> str:
+	"""
+	Returns a string that identifies the party using their formal NIT and
+	Full Name from the DIAN terceros table.
+	"""
+
+	match party_type:
+		case 'Employee':
+			selected_doctype = EMPLOYEE_DOCTYPE_NAME
+			selected_field_for_party = EMPLOYEE_FIELD_NAME_DIAN_TERCERO
+		case 'Shareholder':
+			selected_doctype = SHAREHOLDER_DOCTYPE_NAME
+			selected_field_for_party = SHAREHOLDER_FIELD_NAME_DIAN_TERCERO
+		case 'Customer':
+			selected_doctype = CUSTOMER_DOCTYPE_NAME
+			selected_field_for_party = CUSTOMER_FIELD_NAME_DIAN_TERCERO
+		case 'Supplier':
+			selected_doctype = SUPPLIER_DOCTYPE_NAME
+			selected_field_for_party = SUPPLIER_FIELD_NAME_DIAN_TERCERO
+		case _:
+			return UNKNOWN_PARTY
+
+	# Take the ID of the tercero (NIT) and use it to retrive its info
+	current_nit = frappe.db.get_value(selected_doctype, party, selected_field_for_party) or ""
+	current_selected_party = aux_build_dian_tercero_info(
+		nit=current_nit,
+	)
+	return current_selected_party
+
+
+def aux_get_dian_tercero_info_from_doctype(
+		doc_type: str,
+		doc_id: str,
+		field_name_for_party: str,
+	) -> str:
+	"""
+	Using a DocType identified with the info provided, returns a string
+	that identifies the party using their formal NIT and Full Name whose
+	data is retrieved from the DIAN terceros table.
+	"""
+
+	# Take the ID of the tercero (NIT)
+	current_nit = frappe.db.get_value(doc_type, doc_id, field_name_for_party) or ""
+	current_selected_party = aux_build_dian_tercero_info(
+		nit=current_nit,
+	)
+	return current_selected_party
+
+
+def remap_database_content(
+	db_results: dict[object],
+) -> list[dict[str, object]]:
 	"""
 	Takes the DB results and reorganizes them to match the required structure
 	for the Report which in this case provides a hierarchy that groups the 
@@ -252,6 +322,10 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 
 	for single_gl_entry in db_results:
 
+		"""
+		Determine content from the current record
+		"""
+
 		# Make sure the account key exists on our temporal
 		current_account = single_gl_entry.get(FIELD_NAME_ACCOUNTS)
 		if current_account is None:
@@ -265,58 +339,63 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		current_party_type_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY)
 		current_party_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY)
 
-		match current_voucher_type:
+		"""
+		Determine the current party
+		"""
 
-			case 'Journal Entry':
-				current_selected_party = aux_get_selected_party(
-					current_voucher_type=current_voucher_type,
-					current_voucher_no=current_voucher_no,
-					field_name_for_party=JOURNAL_FIELD_NAME_DIAN_TERCERO,
-				)
+		# If the party is specified for the record, then it prevail over the
+		# document's
+		if current_party_type_from_gl is not None \
+			and current_party_type_from_gl != '' \
+			and current_party_from_gl is not None \
+			and current_party_from_gl != '':
 
-			case 'Payment Entry':
+			current_selected_party = aux_get_dian_tercero_info_for_party_type(
+				party_type=current_party_type_from_gl,
+				party=current_party_from_gl,
+			)
 
-				# Payment Entry uses the field `party` to identify them, but the content of that field needs to be evaluated depending on the `Party type`
-				# to differentiate the codes used by `Employee` and `Shareholder` as opposed to the complete names used by the other types.
-				current_party_type_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, PAYMENT_FIELD_NAME_PARTY_TYPE)
-				current_party_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+		else:
 
-				match current_party_type_from_payment_entry:
-					case 'Employee':
-						current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, EMPLOYEE_FIELD_NAME_EMPLOYEE)
-					case 'Shareholder':
-						current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
-					case _:  # Supplier and Customer use their name instead of a code
-						current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+			match current_voucher_type:
 
-			case 'Purchase Invoice':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
-			case 'Purchase Receipt':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
-			case 'Sales Invoice':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
-			case 'Delivery Note':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
-			case 'Stock Entry':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
-			case _:
-				current_selected_party = None
+				case 'Journal Entry':
+					current_selected_party = aux_get_dian_tercero_info_from_doctype(
+						doc_type=current_voucher_type,
+						doc_id=current_voucher_no,
+						field_name_for_party=JOURNAL_FIELD_NAME_DIAN_TERCERO,
+					)
+
+				case 'Payment Entry':
+
+					# Payment Entry uses the field `party` to identify them, but the content of that field needs to be evaluated depending on the `Party type`
+					# to differentiate the codes used by `Employee` and `Shareholder` as opposed to the complete names used by the other types.
+					current_party_type_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, PAYMENT_FIELD_NAME_PARTY_TYPE)
+					current_party_from_payment_entry = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+
+					match current_party_type_from_payment_entry:
+						case 'Employee':
+							current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, EMPLOYEE_FIELD_NAME_EMPLOYEE)
+						case 'Shareholder':
+							current_selected_party = frappe.db.get_value(current_party_type_from_payment_entry, current_party_from_payment_entry, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
+						case _:  # Supplier and Customer use their name instead of a code
+							current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'party')
+
+				case 'Purchase Invoice':
+					current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+				case 'Purchase Receipt':
+					current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+				case 'Sales Invoice':
+					current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
+				case 'Delivery Note':
+					current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'customer')
+				case 'Stock Entry':
+					current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, 'supplier')
+				case _:
+					current_selected_party = None
 
 		if current_selected_party is None:
-			# Check if the Party fiend on the GL is set
-			if current_party_type_from_gl is not None and current_party_from_gl is not None:
-
-				match current_party_type_from_gl:
-
-					case 'Employee':
-						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, EMPLOYEE_FIELD_NAME_EMPLOYEE)
-					case 'Shareholder':
-						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
-					case _:
-						current_selected_party = current_party_from_gl
-
-			else:
-				current_selected_party = UNKNOWN_PARTY
+			current_selected_party = UNKNOWN_PARTY
 
 		# Make sure the party exists on our temporal
 		if current_selected_party not in temporal_grouping_dict[current_account]:
