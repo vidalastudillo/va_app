@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-
+# 2025-03-21
 
 import frappe
 from frappe import _
@@ -44,10 +44,15 @@ FIELD_NAME_CREDIT = "credit"
 FIELD_NAME_CLOSING_DEBIT = "closing_debit"
 FIELD_NAME_CLOSING_CREDIT = "closing_credit"
 
-JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM = "pay_to_recd_from"
+JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_tercero_dian"
+JOURNAL_FIELD_NAME_DIAN_FULL_NAME = "custom_tercero_dian_nombre_data"  # Cambiar una vez resuelva el asunto del Nombre Completo
+
 PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
 EMPLOYEE_FIELD_NAME_EMPLOYEE = "employee_name"
 SHAREHOLDER_FIELD_NAME_SHAREHOLDER = "title"
+
+DIAN_TERCERO_DOCTYPE_NAME = "DIAN terceros"
+DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO = "nombre_completo"
 
 UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
 UNKNOWN_PARTY = "UNKNOWN_PARTY"
@@ -202,6 +207,27 @@ def get_report_columns():
 	]
 
 
+def aux_get_selected_party(
+		current_voucher_type: str,
+		current_voucher_no: str,
+		field_name_for_party: str,
+	) -> str:
+	"""
+	Provides an string that identifies the party using their formal NIT and
+	Full Name.
+	"""
+	# Take the ID of the tercero (NIT)
+
+	current_nit = frappe.db.get_value(current_voucher_type, current_voucher_no, field_name_for_party) or ""
+
+	# Take the information about that tercero from the DIAN Records
+	current_formal_name = frappe.db.get_value(DIAN_TERCERO_DOCTYPE_NAME, current_nit, DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO) or ""
+
+	joiner = ": "
+	current_selected_party = joiner.join([current_nit, current_formal_name])
+	return current_selected_party
+
+
 def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 	"""
 	Takes the DB results and reorganizes them to match the required structure
@@ -242,7 +268,11 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 		match current_voucher_type:
 
 			case 'Journal Entry':
-				current_selected_party = frappe.db.get_value(current_voucher_type, current_voucher_no, JOURNAL_FIELD_NAME_PAY_TO_RECEIVE_FROM)
+				current_selected_party = aux_get_selected_party(
+					current_voucher_type=current_voucher_type,
+					current_voucher_no=current_voucher_no,
+					field_name_for_party=JOURNAL_FIELD_NAME_DIAN_TERCERO,
+				)
 
 			case 'Payment Entry':
 
@@ -284,6 +314,7 @@ def remap_database_content(db_results: dict[object]) -> list[dict[str, object]]:
 						current_selected_party = frappe.db.get_value(current_party_type_from_gl, current_party_from_gl, SHAREHOLDER_FIELD_NAME_SHAREHOLDER)
 					case _:
 						current_selected_party = current_party_from_gl
+
 			else:
 				current_selected_party = UNKNOWN_PARTY
 
