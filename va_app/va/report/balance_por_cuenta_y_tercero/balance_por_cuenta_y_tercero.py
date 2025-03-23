@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-# 2025-03-22
+# 2025-03-23
 
 import frappe
 from frappe import _
@@ -69,7 +69,7 @@ SUPPLIER_DOCTYPE_NAME = "Supplier"
 SUPPLIER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
 
 # Journal fields
-JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_tercero_dian"  # Cambiar una vez resuelto nombre definitivo
+JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
 
 # Payment fields
 PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
