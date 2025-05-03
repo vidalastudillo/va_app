@@ -49,7 +49,7 @@ UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
 UNKNOWN_PARTY = "UNKNOWN_PARTY"
 
 # DIAN tercero
-DIAN_TERCERO_DOCTYPE_NAME = "DIAN terceros"
+DIAN_TERCERO_DOCTYPE_NAME = "DIAN tercero"
 DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO = "nombre_completo"
 
 # Employee
@@ -246,7 +246,7 @@ def aux_build_dian_tercero_info(
 	) -> str:
 	"""
 	Returns a string that identifies the party using their formal NIT and
-	Full Name from the DIAN terceros table.
+	Full Name from the DIAN tercero table.
 	"""
 
 	if nit is None or nit == "":
@@ -266,7 +266,7 @@ def aux_get_dian_tercero_info_for_party(
 	) -> str:
 	"""
 	Returns a string that identifies the party using their formal NIT and
-	Full Name from the DIAN terceros table.
+	Full Name from the DIAN tercero table.
 	"""
 
 	# Define fields to use to retrieve information from the DocType
@@ -309,7 +309,7 @@ def aux_get_dian_tercero_info_from_doctype(
 	"""
 	Using a DocType identified with the info provided, returns a string
 	that identifies the party using their formal NIT and Full Name whose
-	data is retrieved from the DIAN terceros table.
+	data is retrieved from the DIAN tercero table.
 	"""
 
 	# Values other than None means the Document may have multiple Party Types
