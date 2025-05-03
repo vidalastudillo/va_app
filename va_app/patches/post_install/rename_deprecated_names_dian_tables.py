@@ -16,20 +16,18 @@ def execute():
 	# )
 
 	try:
-		# frappe.get_doc('DocType', 'tabDIAN terceros')
-		frappe.db.rename_table("tabDIAN terceros", "tabDIAN tercero")
-	# except frappe.exceptions.DoesNotExistError:
-	except Exception as exception:
-		print(f"'tabDIAN terceros' not renamed: {exception}")
+		frappe.get_doc('DocType', 'DIAN terceros')
+	except frappe.exceptions.DoesNotExistError:
+		print("'DIAN terceros' not need to be renamed")
 	else:
-		print(f"'tabDIAN terceros' ranaming processed")
+		frappe.db.rename_table("DIAN terceros", "DIAN tercero")
+		print(f"'DIAN terceros' ranaming processed")
 	
 	try:
-		# frappe.get_doc('DocType', 'tabDIAN documents')
-		frappe.db.rename_table("tabDIAN documents", "tabDIAN document")
-	# except frappe.exceptions.DoesNotExistError:
-	except Exception as exception:
-		print(f"'tabDIAN documents' not renamed: {exception}")
+		frappe.get_doc('DocType', 'tabDIAN documents')
+	except frappe.exceptions.DoesNotExistError:
+		print(f"'DIAN documents' not need to be renamed")
 	else:
-		print(f"'tabDIAN documents' ranaming processed")
+		frappe.db.rename_table("DIAN documents", "DIAN document")
+		print(f"'DIAN documents' ranaming processed")
 	
