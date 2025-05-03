@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:nit",
  "creation": "2024-12-22 14:26:15.124199",
@@ -126,7 +127,7 @@
    "link_fieldname": "custom_dian_tercero"
   }
  ],
- "modified": "2025-05-03 10:40:09.472703",
+ "modified": "2025-05-03 13:37:28.680245",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN tercero",

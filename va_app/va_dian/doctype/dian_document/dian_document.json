@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "creation": "2024-12-08 10:36:46.994362",
  "doctype": "DocType",
@@ -56,7 +57,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-03 10:40:42.509821",
+ "modified": "2025-05-03 13:37:54.161787",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN document",
