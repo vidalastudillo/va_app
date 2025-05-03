@@ -1,6 +1,6 @@
 // Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
 // For license information, please see license.txt
-// By JMVA, VIDAL & ASTUDILLO Ltda, 2025
+// By JMVA, VIDAL & ASTUDILLO Ltda
 // Version 2025-04-03
 
 

@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
-# License: GNU General Public License v3. See license.txt
-# 2025-04-01
+# For license information, please see license.txt
+# By JMVA, VIDAL & ASTUDILLO Ltda
+# Version 2025-05-03
 
 import frappe
 from frappe import _
