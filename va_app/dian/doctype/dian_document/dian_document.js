@@ -1,8 +1,0 @@
-// Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
-// For license information, please see license.txt
-
-// frappe.ui.form.on("DIAN document", {
-// 	refresh(frm) {
-
-// 	},
-// });
