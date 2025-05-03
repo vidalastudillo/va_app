@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-# 2025-03-23
+# 2025-04-01
 
 import frappe
 from frappe import _
@@ -109,7 +109,8 @@ def get_report_data(filters):
 	# First, we obtain all the GL Entries on the database
 	# TODO: Filters are not yet implemented
 
-	order_by_statement = f"""order by {FIELD_NAME_ACCOUNTS}, {FIELD_NAME_POSTING_DATE}, creation"""
+	# TODO: Ensure this works
+	order_by_statement = f"""order by {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, creation"""
 
 	gl_entries = frappe.db.sql(
 		f"""
