@@ -1,8 +1,9 @@
-# Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
-# For license information, please see license.txt
-# By JMVA, VIDAL & ASTUDILLO Ltda
-# Version 2025-05-03
-
+""" ----------------------------------------------------------------------------
+Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
+For license information, please see license.txt
+By JMVA, VIDAL & ASTUDILLO Ltda
+Version 2025-05-03
+---------------------------------------------------------------------------- """
 
 import frappe
 
@@ -15,16 +16,20 @@ def execute():
 	# )
 
 	try:
-		frappe.get_doc('DocType', 'tabDIAN terceros')
-	except frappe.exceptions.DoesNotExistError:
-		print("'tabDIAN terceros' is not pressent. No need to rename it")
-	else:
+		# frappe.get_doc('DocType', 'tabDIAN terceros')
 		frappe.db.rename_table("tabDIAN terceros", "tabDIAN tercero")
-
+	# except frappe.exceptions.DoesNotExistError:
+	except Exception as exception:
+		print(f"'tabDIAN terceros' not renamed: {exception}")
+	else:
+		print(f"'tabDIAN terceros' ranaming processed")
 	
 	try:
-		frappe.get_doc('DocType', 'tabDIAN documents')
-	except frappe.exceptions.DoesNotExistError:
-		print("'tabDIAN documents' is not pressent. No need to rename it")
-	else:
+		# frappe.get_doc('DocType', 'tabDIAN documents')
 		frappe.db.rename_table("tabDIAN documents", "tabDIAN document")
+	# except frappe.exceptions.DoesNotExistError:
+	except Exception as exception:
+		print(f"'tabDIAN documents' not renamed: {exception}")
+	else:
+		print(f"'tabDIAN documents' ranaming processed")
+	
