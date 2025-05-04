@@ -15,20 +15,19 @@ Not functional
 import frappe
 import xml.etree.ElementTree as ET
 from frappe.utils.file_manager import get_file_path
-import re
 
 
-@frappe.whitelist()
+# @frappe.whitelist()
 def extract_xml_info(docname):
+    """
+    Provides a dictionary with information contained on the XML document
+    """
 
-    document_namespace = {
-        'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
-        'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-    }
-
+    # Check document exists
     doc = frappe.get_doc("DIAN document", docname)
     if not doc.xml:
         frappe.throw("No XML attachment found.")
+        return None
 
     # Get the file record
     file_list = frappe.get_all("File", filters={"attached_to_doctype": "DIAN document", "attached_to_name": docname, "file_url": ("like", "%xml%")}, fields=["name", "file_name"])
@@ -39,6 +38,7 @@ def extract_xml_info(docname):
     # Determine the file path.
     file_path = get_file_path(file_doc.file_name)
 
+    # Read the XML file
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
@@ -47,9 +47,14 @@ def extract_xml_info(docname):
         return None
     else:
 
+        document_namespace = {
+            'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+            'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+        }
+
         # Helper to get text or None if missing
         def get_text(elem):
-            return elem.text if elem is not None else None
+            return elem.text.strip() if elem is not None and elem.text else None
 
         # ######################################################################
         # Find generic information
@@ -77,16 +82,7 @@ def extract_xml_info(docname):
         reg_receiver_party_id = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
         document_receiver_party_id = get_text(reg_receiver_party_id)
 
-        # 2. Sender address
-        reg_sender_address_elem = root.find('cac:SenderParty/cac:PostalAddress', document_namespace)
-        document_sender_address = {
-            'street_name': get_text(reg_sender_address_elem.find('cbc:StreetName', document_namespace)) if reg_sender_address_elem is not None else None,
-            'city_name': get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)) if reg_sender_address_elem is not None else None,
-            'postal_zone': get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)) if reg_sender_address_elem is not None else None,
-            'country': get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)) if reg_sender_address_elem is not None else None
-        }
-
-        # 3. Extract MIME and Encoding from Attachment/ExternalReference
+        # 2. Extract MIME and Encoding from Attachment/ExternalReference
         mime_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:MimeCode', document_namespace)
         enc_elem  = root.find('cac:Attachment/cac:ExternalReference/cbc:EncodingCode', document_namespace)
         mime_code = get_text(mime_elem)
@@ -95,16 +91,33 @@ def extract_xml_info(docname):
         # 3. Extract the embedded Document XML from the CDATA in Description
         document_uuid = None
         document_items = []
+        document_sender_address = None
+
         desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
         if desc_elem is not None and desc_elem.text:
-            cdata_text = desc_elem.text.strip()
+            cdata = desc_elem.text.strip()
+            # strip XML declaration if present
+            if cdata.startswith('<?xml'):
+                cdata = cdata.split('?>', 1)[1]
+
             try:
                 # Parse the CDATA content as XML
-                invoice_root = ET.fromstring(cdata_text)
-                # The embedded Document uses the same cbc namespace, so reuse document_namespace
+                invoice_root = ET.fromstring(cdata)
+
+                # 1. The embedded Document uses the same cbc namespace, so reuse document_namespace
                 document_uuid = get_text(invoice_root.find('.//cbc:UUID', document_namespace))
 
-                # 4. Extract item list
+                # 2. Sender address
+                reg_sender_address_elem = invoice_root.find('cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address', document_namespace)
+                if reg_sender_address_elem is not None:
+                    document_sender_address = {
+                        'street_name': get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
+                        'city_name': get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
+                        'postal_zone': get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
+                        'country': get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
+                    }
+
+                # 3. Extract item list
                 for line in invoice_root.findall('.//cac:InvoiceLine', document_namespace):
                     description = get_text(line.find('.//cac:Item/cbc:Description', document_namespace))
                     price = get_text(line.find('.//cac:Price/cbc:PriceAmount', document_namespace))
@@ -122,19 +135,6 @@ def extract_xml_info(docname):
         desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
         if desc_elem is None or not desc_elem.text:
             raise ValueError("Could not find embedded invoice in the AttachedDocument")
-        invoice_xml = desc_elem.text.strip()
-
-        # Remove XML declaration if present
-        invoice_xml = re.sub(r'^\\s*<\\?xml[^>]+>', '', invoice_xml)
-
-        # Parse the embedded Invoice XML
-        invoice_root = ET.fromstring(invoice_xml)
-
-        # Extract sender address line
-        # document_sender_address = invoice_root.findtext(
-        #     'cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cac:AddressLine/cbc:Line',
-        #     namespaces=document_namespace
-        # ) or ""
 
         print("Campos de interés identificados")
         print(document_type)
