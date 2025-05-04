@@ -15,10 +15,11 @@ Not functional
 import frappe
 import xml.etree.ElementTree as ET
 from frappe.utils.file_manager import get_file_path
+from va_app.va_dian.api.dian_data_models import VA_DIAN_Document, VA_DIAN_Address
 
 
-# @frappe.whitelist()
-def extract_xml_info(docname):
+@frappe.whitelist()
+def extract_xml_info(docname) -> VA_DIAN_Document | None:
     """
     Provides a dictionary with information contained on the XML document
     """
@@ -61,25 +62,12 @@ def extract_xml_info(docname):
         # ######################################################################
 
         reg_document_type = root.find('cbc:DocumentType', document_namespace)
-        document_type = get_text(reg_document_type)
-
         reg_issue_date = root.find('cbc:IssueDate', document_namespace)
-        document_issue_date = get_text(reg_issue_date)
-
         reg_issue_time = root.find('cbc:IssueTime', document_namespace)
-        document_issue_time = get_text(reg_issue_time)
-
         reg_sender_party_name = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
-        document_sender_party_name = get_text(reg_sender_party_name)
-
         reg_sender_party_id = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
-        document_sender_party_id = get_text(reg_sender_party_id)
-
         reg_receiver_party_name = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
-        document_receiver_party_name = get_text(reg_receiver_party_name)
-
         reg_receiver_party_id = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
-        document_receiver_party_id = get_text(reg_receiver_party_id)
 
         # ######################################################################
         # Find document type dependant information
@@ -110,12 +98,12 @@ def extract_xml_info(docname):
                 # 2. Sender address
                 reg_sender_address_elem = invoice_root.find('cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address', document_namespace)
                 if reg_sender_address_elem is not None:
-                    document_sender_address = {
-                        'street_name': get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
-                        'city_name': get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
-                        'postal_zone': get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
-                        'country': get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
-                    }
+                    document_sender_address = VA_DIAN_Address(
+                        street_name=get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
+                        city_name=get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
+                        postal_zone=get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
+                        country=get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
+                    )
 
                 # 3. Extract item list
                 for line in invoice_root.findall('.//cac:InvoiceLine', document_namespace):
@@ -131,23 +119,24 @@ def extract_xml_info(docname):
         # match document_type:
         #     case 'Contenedor de Factura Electrónica':
         
+        # Build object
+        to_return = VA_DIAN_Document(
+            document_type = get_text(reg_document_type),
+            uuid = document_uuid,
+            issue_date = get_text(reg_issue_date),
+            issue_time = get_text(reg_issue_time),
+            sender_party_name = get_text(reg_sender_party_name),
+            sender_party_id = get_text(reg_sender_party_id),
+            sender_address = document_sender_address,
+            receiver_party_name = get_text(reg_receiver_party_name),
+            receiver_party_id = get_text(reg_receiver_party_id),
+        )
 
         print("Campos de interés identificados")
-        print(document_type)
-        print(document_uuid)
-        print(document_issue_date)
-        print(document_issue_time)
-        print(document_sender_party_name)
-        print(document_sender_party_id)
-        print(document_receiver_party_name)
-        print(document_receiver_party_id)
-        print(document_sender_address)
-        print(document_items)        
+        print(to_return)        
         print("FIN de campos de interés identificados")
 
-        # doc.save(ignore_permissions=True)
-        return {
-            "document_type": doc.document_type,
-            "transaction_date": doc.transaction_date,
-            "third_party_nit": doc.third_party_nit
-        }
+        return to_return.dict()
+
+    
+    # items: list | None = field(default_factory=default_address_list, default=None)
