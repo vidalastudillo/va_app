@@ -62,7 +62,26 @@ class VA_DIAN_Address:
         return {k: str(v) for k, v in asdict(self).items()}
 
 
-def default_address_list() -> list | None:
+@dataclass
+class VA_DIAN_Item:
+    """Information about a DIAN Item"""
+
+    quantity: str | None
+    price: str | None
+    taxable_amount: str | None
+    tax_amount: str | None
+    extension_amount: str | None
+    description: str | None
+    
+    def dict(self):
+        """
+        JSON serializable objects are required when Frappe returns them as
+        responses.
+        """
+        return {k: str(v) for k, v in asdict(self).items()}
+
+
+def default_items_list() -> list[VA_DIAN_Item] | None:
     return []
 
 
@@ -79,8 +98,8 @@ class VA_DIAN_Document:
     sender_address: VA_DIAN_Address | None
     receiver_party_name: str | None
     receiver_party_id: str | None
-    # items: list | None = field(default_factory=default_address_list, default=None)
-    items: list | None = field(default=None)
+    # items: list | None = field(default_factory=default_items_list, default=None)
+    items: list[VA_DIAN_Item] | None = field(default=None)
 
     def dict(self):
         """

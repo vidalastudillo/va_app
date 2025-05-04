@@ -15,7 +15,7 @@ Not functional
 import frappe
 import xml.etree.ElementTree as ET
 from frappe.utils.file_manager import get_file_path
-from va_app.va_dian.api.dian_data_models import VA_DIAN_Document, VA_DIAN_Address
+from va_app.va_dian.api.dian_data_models import VA_DIAN_Document, VA_DIAN_Address, VA_DIAN_Item
 
 
 @frappe.whitelist()
@@ -74,7 +74,7 @@ def extract_xml_info(docname) -> VA_DIAN_Document | None:
         # ######################################################################
 
         document_uuid = None
-        document_items = []
+        document_items = None  # Not all documents use this
         document_sender_address = None
 
         # Find the Description element that contains the CDATA invoice XML
@@ -107,12 +107,22 @@ def extract_xml_info(docname) -> VA_DIAN_Document | None:
 
                 # 3. Extract item list
                 for line in invoice_root.findall('.//cac:InvoiceLine', document_namespace):
-                    description = get_text(line.find('.//cac:Item/cbc:Description', document_namespace))
-                    price = get_text(line.find('.//cac:Price/cbc:PriceAmount', document_namespace))
-                    document_items.append({
-                        'description': description,
-                        'price': price
-                    })
+                    line_quantity = get_text(line.find('.//cbc:InvoicedQuantity', document_namespace))
+                    line_price = get_text(line.find('.//cac:Price/cbc:PriceAmount', document_namespace))
+                    line_extension_amount = get_text(line.find('.//cbc:LineExtensionAmount', document_namespace))
+                    line_taxable_amount = get_text(line.find('.//cbc:TaxableAmount', document_namespace))
+                    line_tax_amount = get_text(line.find('.//cbc:TaxAmount', document_namespace))
+                    line_description = get_text(line.find('.//cac:Item/cbc:Description', document_namespace))
+                    if document_items is None:
+                        document_items = []
+                    document_items.append(VA_DIAN_Item(
+                        quantity=line_quantity,
+                        price=line_price,
+                        taxable_amount=line_taxable_amount,
+                        tax_amount=line_tax_amount,
+                        extension_amount=line_extension_amount,
+                        description=line_description,
+                    ))
             except ET.ParseError:
                 pass
 
@@ -130,6 +140,7 @@ def extract_xml_info(docname) -> VA_DIAN_Document | None:
             sender_address = document_sender_address,
             receiver_party_name = get_text(reg_receiver_party_name),
             receiver_party_id = get_text(reg_receiver_party_id),
+            items=document_items,
         )
 
         print("Campos de interés identificados")
@@ -137,6 +148,3 @@ def extract_xml_info(docname) -> VA_DIAN_Document | None:
         print("FIN de campos de interés identificados")
 
         return to_return.dict()
-
-    
-    # items: list | None = field(default_factory=default_address_list, default=None)
