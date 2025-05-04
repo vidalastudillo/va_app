@@ -11,7 +11,16 @@ Data models
 ---------------------------------------------------------------------------- """
 
 
+from enum import Enum
 from dataclasses import dataclass, field, asdict
+
+
+class ElectronicDocument(Enum):
+    """
+    Tipos de documentos electrónicos implementados en ERPNext
+    """
+    INDETERMINADO = 0
+    FACTURA_ELECTRONICA = 1
 
 
 @dataclass

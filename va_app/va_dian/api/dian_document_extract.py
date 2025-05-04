@@ -15,7 +15,33 @@ Not functional
 import frappe
 from frappe.utils.file_manager import get_file_path
 import xml.etree.ElementTree as ET
-from va_app.va_dian.api.dian_data_models import VA_DIAN_Document, VA_DIAN_Address, VA_DIAN_Item
+from va_app.va_dian.api.dian_data_models import (
+    VA_DIAN_Document,
+    VA_DIAN_Address,
+    VA_DIAN_Item,
+    ElectronicDocument,
+)
+
+
+@frappe.whitelist()
+def get_text(elem: ET) -> str | None:
+    """
+    Helper to get text or None if missing
+    """
+    return elem.text.strip() if elem is not None and elem.text else None
+
+
+@frappe.whitelist()
+def determine_type_of_document(find_result: ET) -> str | None:
+    """
+    Provides a dictionary with information contained on the XML document
+    """
+    result = get_text(find_result)
+    match result:
+        case 'Contenedor de Factura Electrónica':
+            return ElectronicDocument.FACTURA_ELECTRONICA
+        case _:
+            return ElectronicDocument.INDETERMINADO
 
 
 @frappe.whitelist()
@@ -53,16 +79,12 @@ def extract_xml_info(docname) -> dict[str, str] | None:
             'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
         }
 
-        # Helper to get text or None if missing
-        def get_text(elem):
-            return elem.text.strip() if elem is not None and elem.text else None
-
         # ######################################################################
         # Find generic information that should be present in any kind of
         # electronic document
         # ######################################################################
 
-        document_type = get_text(root.find('cbc:DocumentType', document_namespace))
+        document_type = determine_type_of_document(root.find('cbc:DocumentType', document_namespace))
         reg_issue_date = root.find('cbc:IssueDate', document_namespace)
         reg_issue_time = root.find('cbc:IssueTime', document_namespace)
         reg_sender_party_name = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
@@ -108,7 +130,7 @@ def extract_xml_info(docname) -> dict[str, str] | None:
 
                 # 3. Dependant on type of document
                 match document_type:
-                    case 'Contenedor de Factura Electrónica':
+                    case ElectronicDocument.FACTURA_ELECTRONICA:
                         # Extract item list
                         for line in extra_document_root.findall('.//cac:InvoiceLine', document_namespace):
                             line_quantity = get_text(line.find('.//cbc:InvoicedQuantity', document_namespace))
