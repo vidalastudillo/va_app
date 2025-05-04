@@ -15,6 +15,7 @@ Not functional
 import frappe
 import xml.etree.ElementTree as ET
 from frappe.utils.file_manager import get_file_path
+import re
 
 
 @frappe.whitelist()
@@ -23,22 +24,6 @@ def extract_xml_info(docname):
     document_namespace = {
         'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
         'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-        'cdt': 'urn:DocumentInformation:names:specification:ubl:colombia:schema:xsd:DocumentInformationAggregateComponents-1',
-        'chl': 'urn:carvajal:names:specification:ubl:colombia:schema:xsd:CarvajalHealthComponents-1',
-        'clm54217': 'urn:un:unece:uncefact:codelist:specification:54217:2001',
-        'clm66411': 'urn:un:unece:uncefact:codelist:specification:66411:2001',
-        'clmIANAMIMEMediaType': 'urn:un:unece:uncefact:codelist:specification:IANAMIMEMediaType:2003',
-        'cts': 'urn:carvajal:names:specification:ubl:colombia:schema:xsd:CarvajalAggregateComponents-1',
-        'ds': 'http://www.w3.org/2000/09/xmldsig#',
-        'ext': 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
-        'grl': 'urn:General:names:specification:ubl:colombia:schema:xsd:GeneralAggregateComponents-1',
-        'ipt': 'urn:DocumentInformation:names:specification:ubl:colombia:schema:xsd:InteroperabilidadPT-1',
-        'qdt': 'urn:oasis:names:specification:ubl:schema:xsd:QualifiedDatatypes-2',
-        'sts': 'dian:gov:co:facturaelectronica:Structures-2-1',
-        'udt': 'urn:un:unece:uncefact:data:specification:UnqualifiedDataTypesSchemaModule:2',
-        'xades': 'http://uri.etsi.org/01903/v1.3.2#',
-        'xades141': 'http://uri.etsi.org/01903/v1.4.1#',
-        'xsi': 'http://www.w3.org/2001/XMLSchema-instance'
     }
 
     document_attachments = []
@@ -59,55 +44,98 @@ def extract_xml_info(docname):
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
+    except Exception as e:
+        frappe.throw("Error processing XML: " + str(e))
+        return None
+    else:
 
-        for document in root.findall('cac:Attachment', document_namespace):
-            for child in document.findall('cac:ExternalReference', document_namespace):
-                attachment = child.find('cbc:Description', document_namespace).text
-                tr = ET.XML(attachment)
-                for b in tr:
-                    document_attachments.append(b.text)
+        # Helper to get text or None if missing
+        def get_text(elem):
+            return elem.text if elem is not None else None
 
-        # # Extract info based on your XML structure:
-        # doc.document_type = root.findtext("DocumentType") or ""
-        # doc.transaction_date = root.findtext("Date") or ""
-        # doc.third_party_nit = root.findtext("ThirdParty/NIT") or ""
-        # doc.address = root.findtext("ThirdParty/Address") or ""
-        # doc.city = root.findtext("ThirdParty/City") or ""
-        # doc.postal_code = root.findtext("ThirdParty/PostalCode") or ""
-        # # Add other extractions as needed, e.g., transaction details
-        # # doc.some_field = root.findtext("Transaction/SomeField") or ""
+        # ######################################################################
+        # Find generic information
+        # ######################################################################
 
-        document_type = document_attachments.get("AttachedDocument", {}).get("DocumentType", {})
-        document_issue_date = document_attachments.get("AttachedDocument", {}).get("IssueDate", {})
-        document_issue_time = document_attachments.get("AttachedDocument", {}).get("IssueTime", {})
-        doc_sender_party_name = ""
-        doc_sender_party_id = ""
-        doc_sender_party_id_type = ""
-        doc_receiver_party = ""
-        doc_item = ""
+        # 1. Extract from root AttachedDocument
+        reg_document_type = root.find('cbc:DocumentType', document_namespace)
+        document_type = get_text(reg_document_type)
 
-        match document_type:
-            case 'Contenedor de Factura Electrónica':
-                doc_sender_party_name = document_attachments.get("AttachedDocument", {}).get("SenderParty", {}).get("PartyTaxScheme", {}).get("RegistrationName", {})
-                doc_sender_party_id = document_attachments.get("AttachedDocument", {}).get("SenderParty", {}).get("PartyTaxScheme", {}).get("CompanyID", {}).get("#text", {})
-                doc_sender_party_id_type = document_attachments.get("AttachedDocument", {}).get("SenderParty", {}).get("PartyTaxScheme", {}).get("CompanyID", {}).get("@schemeName", {})
-                doc_receiver_party = document_attachments.get("AttachedDocument", {}).get("ReceiverParty", {}).get("PartyTaxScheme", {}).get("RegistrationName", {})
-                # doc_item = root.findall('Invoice/cac:InvoiceLine/Item')
-                # doc_item = root.findall('AttachedDocument/cbc:DocumentType', document_namespace)
-                doc_item = root.findall('AttachedDocument/DocumentType', document_namespace)
-                
+        reg_issue_date = root.find('cbc:IssueDate', document_namespace)
+        document_issue_date = get_text(reg_issue_date)
 
-        print("Tenemos esto en contenido")
-        print(document_attachments)
+        reg_issue_time = root.find('cbc:IssueTime', document_namespace)
+        document_issue_time = get_text(reg_issue_time)
+
+        reg_sender_party_name = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
+        document_sender_party_name = get_text(reg_sender_party_name)
+
+        reg_sender_party_id = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
+        document_sender_party_id = get_text(reg_sender_party_id)
+
+        reg_receiver_party_name = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
+        document_receiver_party_name = get_text(reg_receiver_party_name)
+
+        reg_receiver_party_id = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
+        document_receiver_party_id = get_text(reg_receiver_party_id)
+
+        # 2. Extract MIME and Encoding from Attachment/ExternalReference
+        mime_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:MimeCode', document_namespace)
+        enc_elem  = root.find('cac:Attachment/cac:ExternalReference/cbc:EncodingCode', document_namespace)
+        mime_code = get_text(mime_elem)
+        encoding_code = get_text(enc_elem)
+
+        # 3. Extract the embedded Document XML from the CDATA in Description
+        documento_uuid = None
+        desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
+        if desc_elem is not None and desc_elem.text:
+            cdata_text = desc_elem.text.strip()
+            try:
+                # Parse the CDATA content as XML
+                invoice_root = ET.fromstring(cdata_text)
+                # The embedded Document uses the same cbc namespace, so reuse ns
+                uuid_elem = invoice_root.find('.//cbc:UUID', document_namespace)
+                documento_uuid = get_text(uuid_elem)
+            except ET.ParseError:
+                documento_uuid = None
+
+        # match document_type:
+        #     case 'Contenedor de Factura Electrónica':
+        # doc_item = root.findall('Invoice/cac:InvoiceLine/Item')
+        # doc_item = root.findall('AttachedDocument/cbc:DocumentType', document_namespace)
+        # doc_item = root.findall('AttachedDocument/DocumentType', document_namespace)
+        
+        # Find the Description element that contains the CDATA invoice XML
+        desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
+        if desc_elem is None or not desc_elem.text:
+            raise ValueError("Could not find embedded invoice in the AttachedDocument")
+        invoice_xml = desc_elem.text.strip()
+
+        # Remove XML declaration if present
+        invoice_xml = re.sub(r'^\\s*<\\?xml[^>]+>', '', invoice_xml)
+
+        # Parse the embedded Invoice XML
+        invoice_root = ET.fromstring(invoice_xml)
+
+        # Extract sender address line
+        sender_address = invoice_root.findtext(
+            'cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address/cac:AddressLine/cbc:Line',
+            namespaces=document_namespace
+        ) or ""
+
         print("Campos de interés identificados")
         print(document_type)
         print(document_issue_date)
         print(document_issue_time)
-        print(doc_sender_party_name)
-        print(doc_sender_party_id)
-        print(doc_sender_party_id_type)
-        print(doc_receiver_party)
-        print(doc_item)
+        print(document_sender_party_name)
+        print(document_sender_party_id)
+        print(document_receiver_party_name)
+        print(document_receiver_party_id)
+        print(sender_address)
+        print(documento_uuid)
+        print(mime_code)
+        print(encoding_code)
+        print("FIN de campos de interés identificados")
 
         # doc.save(ignore_permissions=True)
         return {
@@ -115,5 +143,3 @@ def extract_xml_info(docname):
             "transaction_date": doc.transaction_date,
             "third_party_nit": doc.third_party_nit
         }
-    except Exception as e:
-        frappe.throw("Error processing XML: " + str(e))
