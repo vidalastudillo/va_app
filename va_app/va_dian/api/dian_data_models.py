@@ -1,0 +1,90 @@
+""" ----------------------------------------------------------------------------
+Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
+For license information, please see license.txt
+By JMVA, VIDAL & ASTUDILLO Ltda
+Version 2025-05-04
+
+--------------------------------------------------------------------------------
+
+Data models
+
+---------------------------------------------------------------------------- """
+
+
+from dataclasses import dataclass, field, asdict
+
+
+@dataclass
+class VA_DIAN_Tercero:
+    """Information about a DIAN Tercero"""
+
+    nit: str
+    numero_de_identificacion: str | None
+    tipo_de_documento: str | None
+    tipo_de_contribuyente: str | None
+    primer_apellido: str | None
+    segundo_apellido: str | None
+    primer_nombre: str | None
+    otros_nombres: str | None
+    razon_social: str | None
+    nombre_comercial: str | None
+    direccion_principal: str | None
+    correo_electronico: str | None
+    telefono_1: str | None
+    telefono_2: str | None
+    codigo_postal: str | None
+    ciudad_municipio: str | None
+    departamento: str | None
+    pais: str | None
+
+    def dict(self):
+        """
+        JSON serializable objects are required when Frappe returns them as
+        responses.
+        """
+        return {k: str(v) for k, v in asdict(self).items()}
+
+
+@dataclass
+class VA_DIAN_Address:
+    """Information about a DIAN Address"""
+
+    street_name: str | None
+    city_name: str | None
+    postal_zone: str | None
+    country: str | None
+
+    def dict(self):
+        """
+        JSON serializable objects are required when Frappe returns them as
+        responses.
+        """
+        return {k: str(v) for k, v in asdict(self).items()}
+
+
+def default_address_list() -> list | None:
+    return []
+
+
+@dataclass
+class VA_DIAN_Document:
+    """Information about a DIAN Document"""
+
+    document_type: str
+    uuid: str
+    issue_date: str
+    issue_time: str
+    sender_party_name: str
+    sender_party_id: str
+    sender_address: VA_DIAN_Address | None
+    receiver_party_name: str | None
+    receiver_party_id: str | None
+    # items: list | None = field(default_factory=default_address_list, default=None)
+    items: list | None = field(default=None)
+
+    def dict(self):
+        """
+        JSON serializable objects are required when Frappe returns them as
+        responses.
+        """
+        return {k: str(v) for k, v in asdict(self).items()}
