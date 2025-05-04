@@ -37,40 +37,40 @@ Requerimientos:
  * Botones para ejecutar procesos sobre los documentos
  */
 frappe.ui.form.on("DIAN document", {
-    refresh: function(frm) {
-      // Add Extract Info button
-      frm.add_custom_button("Extract Info", function() {
-        if (!frm.doc.xml) {
-          frappe.msgprint(__("Please attach an XML first."));
-          return;
+  refresh: function(frm) {
+    // Add Extract Info button
+    frm.add_custom_button("Extract Info", function() {
+      if (!frm.doc.xml) {
+        frappe.msgprint(__("Please attach an XML first."));
+        return;
+      }
+      frappe.call({
+        method: "va_app.va_dian.api.dian_document_extract.extract_xml_info",
+        args: {
+          docname: frm.doc.name
+        },
+        callback: function(r) {
+          if (r.message) {
+            frm.reload_doc();
+            frappe.msgprint(__("Extraction completed successfully."));
+          }
         }
-        frappe.call({
-          method: "your_app.api.extract_xml_info",
-          args: {
-            docname: frm.doc.name
-          },
-          callback: function(r) {
-            if (r.message) {
-              frm.reload_doc();
-              frappe.msgprint(__("Extraction completed successfully."));
-            }
-          }
-        });
       });
-  
-      // Add Create Document button
-      frm.add_custom_button("Create Document", function() {
-        frappe.call({
-          method: "your_app.api.create_document",
-          args: {
-            docname: frm.doc.name
-          },
-          callback: function(r) {
-            if (r.message) {
-              frappe.msgprint(__("Document created: ") + r.message);
-            }
+    });
+
+    // Add Create Document button
+    frm.add_custom_button("Create Document", function() {
+      frappe.call({
+        method: "va_app.va_dian.api.dian_document_create.create_document",
+        args: {
+          docname: frm.doc.name
+        },
+        callback: function(r) {
+          if (r.message) {
+            frappe.msgprint(__("Document created: ") + r.message);
           }
-        });
+        }
       });
-    }
-  });
+    });
+  }
+});
