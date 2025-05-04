@@ -60,7 +60,6 @@ def extract_xml_info(docname):
         # Find generic information
         # ######################################################################
 
-        # 1. Extract from root AttachedDocument
         reg_document_type = root.find('cbc:DocumentType', document_namespace)
         document_type = get_text(reg_document_type)
 
@@ -82,19 +81,20 @@ def extract_xml_info(docname):
         reg_receiver_party_id = root.find('cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID', document_namespace)
         document_receiver_party_id = get_text(reg_receiver_party_id)
 
-        # 2. Extract MIME and Encoding from Attachment/ExternalReference
-        mime_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:MimeCode', document_namespace)
-        enc_elem  = root.find('cac:Attachment/cac:ExternalReference/cbc:EncodingCode', document_namespace)
-        mime_code = get_text(mime_elem)
-        encoding_code = get_text(enc_elem)
+        # ######################################################################
+        # Find document type dependant information
+        # ######################################################################
 
-        # 3. Extract the embedded Document XML from the CDATA in Description
         document_uuid = None
         document_items = []
         document_sender_address = None
 
+        # Find the Description element that contains the CDATA invoice XML
         desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
-        if desc_elem is not None and desc_elem.text:
+        if desc_elem is None or not desc_elem.text:
+            frappe.throw("Could not find embedded data in the AttachedDocument of the XML")
+            return None
+        else:
             cdata = desc_elem.text.strip()
             # strip XML declaration if present
             if cdata.startswith('<?xml'):
@@ -131,13 +131,10 @@ def extract_xml_info(docname):
         # match document_type:
         #     case 'Contenedor de Factura Electrónica':
         
-        # Find the Description element that contains the CDATA invoice XML
-        desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
-        if desc_elem is None or not desc_elem.text:
-            raise ValueError("Could not find embedded invoice in the AttachedDocument")
 
         print("Campos de interés identificados")
         print(document_type)
+        print(document_uuid)
         print(document_issue_date)
         print(document_issue_time)
         print(document_sender_party_name)
@@ -145,10 +142,7 @@ def extract_xml_info(docname):
         print(document_receiver_party_name)
         print(document_receiver_party_id)
         print(document_sender_address)
-        print(document_uuid)
         print(document_items)        
-        print(mime_code)
-        print(encoding_code)
         print("FIN de campos de interés identificados")
 
         # doc.save(ignore_permissions=True)
