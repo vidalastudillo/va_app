@@ -26,7 +26,7 @@ from va_app.va_dian.api.utils import (
 )
 
 
-@frappe.whitelist()
+# @frappe.whitelist()
 def get_text(elem: ET) -> str | None:
     """
     Helper to get text or None if missing
@@ -34,7 +34,7 @@ def get_text(elem: ET) -> str | None:
     return elem.text.strip() if elem is not None and elem.text else None
 
 
-@frappe.whitelist()
+# @frappe.whitelist()
 def determine_type_of_document(find_result: ET) -> str | None:
     """
     Provides a dictionary with information contained on the XML document
@@ -47,7 +47,7 @@ def determine_type_of_document(find_result: ET) -> str | None:
             return ElectronicDocument.INDETERMINADO
 
 
-@frappe.whitelist()
+# @frappe.whitelist()
 def extract_xml_info(docname) -> dict[str, str] | None:
     """
     Provides a dictionary with information contained on the XML document
