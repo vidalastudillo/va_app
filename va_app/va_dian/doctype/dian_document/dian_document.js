@@ -38,34 +38,15 @@ Requerimientos:
  */
 frappe.ui.form.on("DIAN document", {
   refresh: function(frm) {
-    // Add Extract Info button
-    frm.add_custom_button("Test extract Info", function() {
-      if (!frm.doc.xml) {
-        frappe.msgprint(__("Please attach an XML first."));
-        return;
-      }
-      frappe.call({
-        method: "va_app.va_dian.api.dian_document_extract.extract_xml_info",
-        args: {
-          docname: frm.doc.name
-        },
-        callback: function(r) {
-          if (r.message) {
-            frm.reload_doc();
-            frappe.msgprint(__("Extraction completed successfully."));
-          }
-        }
-      });
-    });
 
-    // Add Update XML button
+    // Update XML button
     frm.add_custom_button("Update DOC from XML", function() {
       if (!frm.doc.xml) {
         frappe.msgprint(__("Please attach an XML first."));
         return;
       }
       frappe.call({
-        method: "va_app.va_dian.api.dian_document_extract.update_doc_with_xml_info",
+        method: "va_app.va_dian.api.dian_document_utils.update_doc_with_xml_info",
         args: {
           docname: frm.doc.name
         },
@@ -77,7 +58,7 @@ frappe.ui.form.on("DIAN document", {
       });
     });
     
-    // Add Create Document button
+    // Create Document button
     frm.add_custom_button("DO NOT USE Create Document", function() {
       frappe.call({
         method: "va_app.va_dian.api.dian_document_create.create_document",
