@@ -7,24 +7,35 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "identificaci\u00f3n_section",
+  "identificacion_section",
   "nit",
-  "div",
   "razon_social",
+  "nombre_comercial",
+  "tipo_de_contribuyente",
+  "tipo_de_documento",
+  "numero_de_identificacion",
+  "column_break_hwox",
+  "div",
   "primer_apellido",
   "segundo_apellido",
   "primer_nombre",
   "otros_nombres",
+  "section_break_pviw",
   "nombre_completo",
-  "rut_section",
-  "rut"
+  "column_break_yucj",
+  "rut",
+  "contacto_section",
+  "direccion_principal",
+  "correo_electronico",
+  "telefono_1",
+  "telefono_2",
+  "column_break_hhzf",
+  "codigo_postal",
+  "ciudad_municipio",
+  "departamento",
+  "pais"
  ],
  "fields": [
-  {
-   "fieldname": "identificaci\u00f3n_section",
-   "fieldtype": "Section Break",
-   "label": "Identificaci\u00f3n"
-  },
   {
    "description": "N\u00famero de Indentificaci\u00f3n Tributaria",
    "fieldname": "nit",
@@ -88,14 +99,95 @@
    "reqd": 1
   },
   {
-   "fieldname": "rut_section",
-   "fieldtype": "Section Break",
-   "label": "RUT"
-  },
-  {
    "fieldname": "rut",
    "fieldtype": "Attach",
    "label": "RUT"
+  },
+  {
+   "fieldname": "nombre_comercial",
+   "fieldtype": "Data",
+   "label": "Nombre comercial"
+  },
+  {
+   "fieldname": "tipo_de_contribuyente",
+   "fieldtype": "Data",
+   "label": "Tipo de contribuyente"
+  },
+  {
+   "fieldname": "tipo_de_documento",
+   "fieldtype": "Data",
+   "label": "Tipo de documento"
+  },
+  {
+   "fieldname": "column_break_hwox",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_pviw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_yucj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_hhzf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ciudad_municipio",
+   "fieldtype": "Data",
+   "label": "Ciudad Municipio"
+  },
+  {
+   "fieldname": "departamento",
+   "fieldtype": "Data",
+   "label": "Departamento"
+  },
+  {
+   "fieldname": "numero_de_identificacion",
+   "fieldtype": "Data",
+   "label": "N\u00famero de identificaci\u00f3n"
+  },
+  {
+   "fieldname": "direccion_principal",
+   "fieldtype": "Data",
+   "label": "Direcci\u00f3n principal"
+  },
+  {
+   "fieldname": "correo_electronico",
+   "fieldtype": "Data",
+   "label": "Correo electr\u00f3nico"
+  },
+  {
+   "fieldname": "telefono_1",
+   "fieldtype": "Data",
+   "label": "Tel\u00e9fono 1"
+  },
+  {
+   "fieldname": "telefono_2",
+   "fieldtype": "Data",
+   "label": "Tel\u00e9fono 2"
+  },
+  {
+   "fieldname": "codigo_postal",
+   "fieldtype": "Data",
+   "label": "C\u00f3digo Postal"
+  },
+  {
+   "fieldname": "pais",
+   "fieldtype": "Data",
+   "label": "Pa\u00eds"
+  },
+  {
+   "fieldname": "contacto_section",
+   "fieldtype": "Section Break",
+   "label": "Contacto"
+  },
+  {
+   "fieldname": "identificacion_section",
+   "fieldtype": "Section Break",
+   "label": "Identificaci\u00f3n"
   }
  ],
  "grid_page_length": 50,
@@ -127,7 +219,7 @@
    "link_fieldname": "custom_dian_tercero"
   }
  ],
- "modified": "2025-05-03 13:37:28.680245",
+ "modified": "2025-05-04 22:24:54.758723",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN tercero",
