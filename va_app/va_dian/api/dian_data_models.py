@@ -101,6 +101,7 @@ class VA_DIAN_Document:
     """Information about a DIAN Document"""
 
     document_type: str
+    document_id: str
     uuid: str
     issue_date: str
     issue_time: str

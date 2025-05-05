@@ -86,6 +86,7 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
         # ######################################################################
 
         document_type = aux_determine_type_of_document(root.find('cbc:DocumentType', document_namespace))
+        reg_document_id = root.find('cbc:ParentDocumentID', document_namespace) 
         reg_issue_date = root.find('cbc:IssueDate', document_namespace)
         reg_issue_time = root.find('cbc:IssueTime', document_namespace)
         reg_sender_party_name = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
@@ -166,6 +167,7 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
         # Build object
         to_return = VA_DIAN_Document(
             document_type = document_type,
+            document_id = aux_get_text(reg_document_id),
             uuid = document_uuid,
             issue_date = aux_get_text(reg_issue_date),
             issue_time = aux_get_text(reg_issue_time),
