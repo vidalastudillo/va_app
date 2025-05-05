@@ -2,7 +2,7 @@
 Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-04
+Version 2025-05-05
 
 --------------------------------------------------------------------------------
 
@@ -12,18 +12,8 @@ Data models.
 
 
 from enum import StrEnum
-from dataclasses import dataclass, field, asdict, is_dataclass
-
-
-def recursive_dataclass_to_dict(data):
-    if is_dataclass(data):
-        return {key: recursive_dataclass_to_dict(value) for key, value in asdict(data).items()}
-    elif isinstance(data, list):
-        return [recursive_dataclass_to_dict(item) for item in data]
-    elif isinstance(data, dict):
-        return {key: recursive_dataclass_to_dict(value) for key, value in data.items()}
-    else:
-        return data
+from dataclasses import dataclass, field
+from va_app.va_dian.api.utils import recursive_dataclass_to_dict
 
 
 class ElectronicDocument(StrEnum):
