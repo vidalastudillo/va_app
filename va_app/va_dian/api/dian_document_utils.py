@@ -3,12 +3,6 @@ Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
 Version 2025-05-04
-
-!!!
-DRAFT!
-Not functional
-!!!
-
 ---------------------------------------------------------------------------- """
 
 
@@ -17,9 +11,13 @@ from frappe.utils.file_manager import get_file_path
 import xml.etree.ElementTree as ET
 from va_app.va_dian.api.dian_data_models import (
     VA_DIAN_Document,
+    VA_DIAN_Tercero,
     VA_DIAN_Address,
     VA_DIAN_Item,
     ElectronicDocument,
+)
+from va_app.va_dian.api.dian_tercero_utils import (
+    upsert_dian_tercero,    
 )
 from va_app.va_dian.api.utils import (
     provide_nicely_formatted_dictionary,
@@ -28,14 +26,15 @@ from va_app.va_dian.api.utils import (
 
 def aux_get_text(elem: ET) -> str | None:
     """
-    Helper to get text or None if missing
+    Helper to get text or None if missing.
     """
     return elem.text.strip() if elem is not None and elem.text else None
 
 
 def aux_determine_type_of_document(find_result: ET) -> str | None:
     """
-    Provides a dictionary with information contained on the XML document
+    Helper to determine the electronic document type from the identification
+    text on it.
     """
     result = aux_get_text(find_result)
     match result:
@@ -47,7 +46,7 @@ def aux_determine_type_of_document(find_result: ET) -> str | None:
 
 def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
     """
-    Provides a dictionary with information contained on the XML document
+    Helper to provide an object with information contained on the XML document.
     """
 
     # Check requested DIAN Document exists
@@ -175,7 +174,10 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
 @frappe.whitelist()
 def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     """
-    Provides a dictionary with information contained on the XML document
+    Update the `DIAN document` with the information contained on its XML file.
+    Returns:
+    - A dict with the information of the document, if successful.
+    - None, otherwise.
     """
 
     if not docname:
@@ -210,8 +212,55 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     doc.save()
     frappe.db.commit()
 
-    # Rename document with content from UUID
+    # Rename document with content from UUID, if required
     if doc.name != uuid_from_xml:
         doc.rename(uuid_from_xml)
+        frappe.db.commit()
 
     return doc.as_dict()
+
+
+@frappe.whitelist()
+def update_dian_tercero_with_xml_info(docname) -> str | None:
+    """
+    Insert/Update document in `DIAN tercero` using the XML information
+    on the table `DIAN Document` for the provided `docname`.
+    Returns:
+    - The `docname` of the record updated on `DIAN tercero`, if successful.
+    - None, otherwise.
+    """
+
+    if not docname:
+        frappe.throw("Please provide a document for DIAN Document")
+        return None
+
+    # Obtain results from fecthing XML
+    xml_result = aux_extract_xml_info(docname)
+    if xml_result is None:
+        return None
+    
+    # Assigns
+    tercero_data = VA_DIAN_Tercero(
+        nit=xml_result.sender_party_id,
+        numero_de_identificacion=None,
+        tipo_de_documento=None,
+        tipo_de_contribuyente=None,
+        primer_apellido=None,
+        segundo_apellido=None,
+        primer_nombre=None,
+        otros_nombres=None,
+        razon_social=xml_result.sender_party_name,
+        nombre_comercial=None,
+        direccion_principal=xml_result.sender_address.street_name,
+        correo_electronico=None,
+        telefono_1=None,
+        telefono_2=None,
+        codigo_postal=xml_result.sender_address.postal_zone,
+        ciudad_municipio=xml_result.sender_address.city_name,
+        departamento=None,
+        pais=xml_result.sender_address.country,
+    )
+
+    result_from_upsert = upsert_dian_tercero(tercero_data.dict())
+
+    return result_from_upsert
