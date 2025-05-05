@@ -2,7 +2,7 @@
 Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-04
+Version 2025-05-05
 ---------------------------------------------------------------------------- """
 
 
@@ -101,6 +101,8 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
         document_uuid = None
         document_items = None  # Not all documents use this
         document_sender_address = None
+        reg_sender_email_elem = None
+        reg_sender_telephone_elem = None
 
         # Find the Description element that contains the CDATA invoice XML
         desc_elem = root.find('cac:Attachment/cac:ExternalReference/cbc:Description', document_namespace)
@@ -163,6 +165,10 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
 
             except ET.ParseError:
                 pass
+
+        # Before procedding, we try to determine the UUID if not yet identified
+        if document_uuid is None:
+            document_uuid = aux_get_text(root.find('cac:ParentDocumentLineReference/cac:DocumentReference/cbc:UUID', document_namespace))
 
         # Build object
         to_return = VA_DIAN_Document(
