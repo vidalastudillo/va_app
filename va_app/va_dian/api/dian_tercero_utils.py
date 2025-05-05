@@ -37,12 +37,13 @@ def upsert_dian_tercero(content) -> str | None:
 
     # Try to retrieve document
     are_we_inserting = False
-    document_tercero = frappe.get_doc("DIAN tercero", content_validated.nit)
-
-    # Document not available? Insertion in required
-    if document_tercero.name is None:
+    try:
+        document_tercero = frappe.get_doc("DIAN tercero", content_validated.nit, for_update=True)
+    except frappe.exceptions.DoesNotExistError:
+        # Document not available? Insertion in required
         are_we_inserting = True
         document_tercero = frappe.new_doc("DIAN tercero")
+        document_tercero.set('nit', content_validated.nit)
 
     # Common fields to update
     document_tercero.set('razon_social', content_validated.razon_social)
@@ -53,6 +54,10 @@ def upsert_dian_tercero(content) -> str | None:
     document_tercero.set('pais', content_validated.pais)
     document_tercero.set('correo_electronico', content_validated.correo_electronico)
     document_tercero.set('telefono_1', content_validated.telefono_1)
+
+    # TODO: Update from function
+    document_tercero.set('div', 9999)
+    document_tercero.set('nombre_completo', content_validated.razon_social)
 
     # Final database operations
     if are_we_inserting:
