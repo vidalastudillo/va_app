@@ -21,6 +21,9 @@ from va_app.va_dian.api.dian_data_models import (
     VA_DIAN_Item,
     ElectronicDocument,
 )
+from va_app.va_dian.api.utils import (
+    provide_nicely_formatted_dictionary,
+)
 
 
 @frappe.whitelist()
@@ -174,3 +177,48 @@ def extract_xml_info(docname) -> dict[str, str] | None:
         print("FIN de campos de interés identificados")
 
         return to_return.dict()
+
+
+@frappe.whitelist()
+def update_doc_with_xml_info(docname) -> dict[str, str] | None:
+    """
+    Provides a dictionary with information contained on the XML document
+    """
+
+    if not docname:
+        frappe.throw("Please provide a document to update")
+
+    # Obtain results from fecthing XML
+    xml_result = extract_xml_info(docname)
+    if xml_result is None:
+        return None
+
+    # Obtain document to update
+    doc = frappe.get_doc("DIAN document", docname)
+    if not doc.xml:
+        frappe.throw(f"DIAN document: {docname} does not exists")
+        return None
+    
+    # Obtain UUID from XML
+    uuid_from_xml = xml_result.get('uuid')
+    if uuid_from_xml is None:
+        frappe.throw("XML does not containd a valid UUID")
+        return None
+    
+    # Obtain and set Sender Party from XML
+    dian_tercero_from_xml = xml_result.get('sender_party_id')
+    if dian_tercero_from_xml is not None:
+        doc.set('xml_dian_tercero', str(dian_tercero_from_xml))
+
+    # Obtain content from XML
+    doc.set('xml_content', provide_nicely_formatted_dictionary(xml_result))
+
+    # Save & commit
+    doc.save()
+    frappe.db.commit()
+
+    # Rename document with content from UUID
+    if doc.name != uuid_from_xml:
+        doc.rename(uuid_from_xml)
+
+    return doc.as_dict()
