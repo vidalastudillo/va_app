@@ -3,7 +3,7 @@
 Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-03
+Version 2025-05-04
 
 --------------------------------------------------------------------------------
 Propósitos:
@@ -59,15 +59,20 @@ frappe.ui.form.on("DIAN document", {
     });
     
     // Create Document button
-    frm.add_custom_button("DO NOT USE Create Document", function() {
+    frm.add_custom_button("Insert/Update DIAN Tercero from XML", function() {
+      if (!frm.doc.xml) {
+        frappe.msgprint(__("Please attach an XML first."));
+        return;
+      }
       frappe.call({
-        method: "va_app.va_dian.api.dian_document_create.create_document",
+        method: "va_app.va_dian.api.dian_document_utils.update_dian_tercero_with_xml_info",
         args: {
           docname: frm.doc.name
         },
         callback: function(r) {
           if (r.message) {
-            frappe.msgprint(__("Document created: ") + r.message);
+            frm.reload_doc();
+            frappe.msgprint(__("Document should have been updated: ") + r.message);
           }
         }
       });
