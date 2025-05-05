@@ -45,7 +45,7 @@ def aux_determine_type_of_document(find_result: ET) -> str | None:
             return ElectronicDocument.INDETERMINADO
 
 
-def aux_extract_xml_info(docname) -> dict[str, str] | None:
+def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
     """
     Provides a dictionary with information contained on the XML document
     """
@@ -169,11 +169,7 @@ def aux_extract_xml_info(docname) -> dict[str, str] | None:
             items=document_items,
         )
 
-        print("Campos de interés identificados")
-        print(to_return)        
-        print("FIN de campos de interés identificados")
-
-        return to_return.dict()
+        return to_return
 
 
 @frappe.whitelist()
@@ -197,18 +193,18 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
         return None
     
     # Obtain UUID from XML
-    uuid_from_xml = xml_result.get('uuid')
+    uuid_from_xml = xml_result.uuid
     if uuid_from_xml is None:
         frappe.throw("XML does not containd a valid UUID")
         return None
     
     # Obtain and set Sender Party from XML
-    dian_tercero_from_xml = xml_result.get('sender_party_id')
+    dian_tercero_from_xml = xml_result.sender_party_id
     if dian_tercero_from_xml is not None:
         doc.set('xml_dian_tercero', str(dian_tercero_from_xml))
 
     # Obtain content from XML
-    doc.set('xml_content', provide_nicely_formatted_dictionary(xml_result))
+    doc.set('xml_content', provide_nicely_formatted_dictionary(xml_result.dict()))
 
     # Save & commit
     doc.save()
