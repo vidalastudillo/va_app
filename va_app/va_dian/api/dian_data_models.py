@@ -11,16 +11,30 @@ Data models.
 ---------------------------------------------------------------------------- """
 
 
-from enum import Enum
-from dataclasses import dataclass, field, asdict
+from enum import StrEnum
+from dataclasses import dataclass, field, asdict, is_dataclass
+
+import frappe
 
 
-class ElectronicDocument(Enum):
+@frappe.whitelist()
+def recursive_dataclass_to_dict(data):
+    if is_dataclass(data):
+        return {key: recursive_dataclass_to_dict(value) for key, value in asdict(data).items()}
+    elif isinstance(data, list):
+        return [recursive_dataclass_to_dict(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: recursive_dataclass_to_dict(value) for key, value in data.items()}
+    else:
+        return data
+
+
+class ElectronicDocument(StrEnum):
     """
     Tipos de documentos electrónicos implementados en ERPNext
     """
-    INDETERMINADO = 0
-    FACTURA_ELECTRONICA = 1
+    INDETERMINADO = "Indeterminado"
+    FACTURA_ELECTRONICA = "Factura electrónica"
 
 
 @dataclass
@@ -51,7 +65,7 @@ class VA_DIAN_Tercero:
         JSON serializable objects are required when Frappe returns them as
         responses.
         """
-        return {k: str(v) for k, v in asdict(self).items()}
+        return recursive_dataclass_to_dict(self)
 
 
 @dataclass
@@ -68,7 +82,7 @@ class VA_DIAN_Address:
         JSON serializable objects are required when Frappe returns them as
         responses.
         """
-        return {k: str(v) for k, v in asdict(self).items()}
+        return recursive_dataclass_to_dict(self)
 
 
 @dataclass
@@ -87,7 +101,7 @@ class VA_DIAN_Item:
         JSON serializable objects are required when Frappe returns them as
         responses.
         """
-        return {k: str(v) for k, v in asdict(self).items()}
+        return recursive_dataclass_to_dict(self)
 
 
 def default_items_list() -> list[VA_DIAN_Item] | None:
@@ -115,4 +129,4 @@ class VA_DIAN_Document:
         JSON serializable objects are required when Frappe returns them as
         responses.
         """
-        return {k: str(v) for k, v in asdict(self).items()}
+        return recursive_dataclass_to_dict(self)
