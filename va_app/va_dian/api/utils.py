@@ -11,13 +11,10 @@ Utils.
 ---------------------------------------------------------------------------- """
 
 
-import frappe
-
-
-@frappe.whitelist()
 def provide_nicely_formatted_dictionary(data: dict, indent=0) -> str:
     """
-    Provides a dictionary with idented structure
+    Helper that provides a dictionary aimed to facilitate user selection of
+    text.
     """
 
     result = ""
