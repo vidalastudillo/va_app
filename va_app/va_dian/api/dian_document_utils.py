@@ -123,13 +123,20 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
                 reg_sender_address_elem = extra_document_root.find('cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address', document_namespace)
                 if reg_sender_address_elem is not None:
                     document_sender_address = VA_DIAN_Address(
-                        street_name=aux_get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
-                        city_name=aux_get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
-                        postal_zone=aux_get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
-                        country=aux_get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
+                        direccion=aux_get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
+                        ciudad=aux_get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
+                        departamento=aux_get_text(reg_sender_address_elem.find('cbc:CountrySubentity', document_namespace)),
+                        codigo_postal=aux_get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
+                        pais=aux_get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
                     )
 
-                # 3. Dependant on type of document
+                # 3. Sender address
+                reg_sender_email_elem = extra_document_root.find('cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:ElectronicMail', document_namespace)
+
+                # 4. Sender telephone
+                reg_sender_telephone_elem = extra_document_root.find('cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:Telephone', document_namespace)
+
+                # 5. Dependant on type of document
                 match document_type:
                     case ElectronicDocument.FACTURA_ELECTRONICA:
                         # Extract item list
@@ -165,6 +172,8 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
             sender_party_name = aux_get_text(reg_sender_party_name),
             sender_party_id = aux_get_text(reg_sender_party_id),
             sender_address = document_sender_address,
+            sender_email=aux_get_text(reg_sender_email_elem),
+            sender_telephone=aux_get_text(reg_sender_telephone_elem),
             receiver_party_name = aux_get_text(reg_receiver_party_name),
             receiver_party_id = aux_get_text(reg_receiver_party_id),
             items=document_items,
@@ -254,14 +263,14 @@ def update_dian_tercero_with_xml_info(docname) -> str | None:
         otros_nombres=None,
         razon_social=xml_result.sender_party_name,
         nombre_comercial=None,
-        direccion_principal=xml_result.sender_address.street_name,
-        correo_electronico=None,
-        telefono_1=None,
+        correo_electronico=xml_result.sender_email,
+        telefono_1=xml_result.sender_telephone,
         telefono_2=None,
-        codigo_postal=xml_result.sender_address.postal_zone,
-        ciudad_municipio=xml_result.sender_address.city_name,
-        departamento=None,
-        pais=xml_result.sender_address.country,
+        direccion_principal=xml_result.sender_address.direccion,
+        ciudad_municipio=xml_result.sender_address.ciudad,
+        departamento=xml_result.sender_address.departamento,
+        codigo_postal=xml_result.sender_address.codigo_postal,
+        pais=xml_result.sender_address.pais,
     )
 
     result_from_upsert = upsert_dian_tercero(tercero_data.dict())

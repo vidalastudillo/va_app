@@ -49,7 +49,10 @@ def upsert_dian_tercero(content) -> str | None:
     document_tercero.set('direccion_principal', content_validated.direccion_principal)
     document_tercero.set('codigo_postal', content_validated.codigo_postal)
     document_tercero.set('ciudad_municipio', content_validated.ciudad_municipio)
+    document_tercero.set('departamento', content_validated.departamento)
     document_tercero.set('pais', content_validated.pais)
+    document_tercero.set('correo_electronico', content_validated.correo_electronico)
+    document_tercero.set('telefono_1', content_validated.telefono_1)
 
     # Final database operations
     if are_we_inserting:

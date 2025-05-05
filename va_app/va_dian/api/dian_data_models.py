@@ -48,13 +48,13 @@ class VA_DIAN_Tercero:
     otros_nombres: str | None
     razon_social: str | None
     nombre_comercial: str | None
-    direccion_principal: str | None
     correo_electronico: str | None
     telefono_1: str | None
     telefono_2: str | None
-    codigo_postal: str | None
+    direccion_principal: str | None
     ciudad_municipio: str | None
     departamento: str | None
+    codigo_postal: str | None
     pais: str | None
 
     def dict(self):
@@ -69,10 +69,11 @@ class VA_DIAN_Tercero:
 class VA_DIAN_Address:
     """Information about a DIAN Address"""
 
-    street_name: str | None
-    city_name: str | None
-    postal_zone: str | None
-    country: str | None
+    direccion: str | None
+    ciudad: str | None
+    departamento: str | None
+    codigo_postal: str | None
+    pais: str | None
 
     def dict(self):
         """
@@ -116,6 +117,8 @@ class VA_DIAN_Document:
     sender_party_name: str
     sender_party_id: str
     sender_address: VA_DIAN_Address | None
+    sender_email: str | None
+    sender_telephone: str | None
     receiver_party_name: str | None
     receiver_party_id: str | None
     # items: list | None = field(default_factory=default_items_list, default=None)
