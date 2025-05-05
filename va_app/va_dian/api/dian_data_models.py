@@ -14,10 +14,7 @@ Data models.
 from enum import StrEnum
 from dataclasses import dataclass, field, asdict, is_dataclass
 
-import frappe
 
-
-@frappe.whitelist()
 def recursive_dataclass_to_dict(data):
     if is_dataclass(data):
         return {key: recursive_dataclass_to_dict(value) for key, value in asdict(data).items()}

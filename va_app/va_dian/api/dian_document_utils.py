@@ -26,20 +26,18 @@ from va_app.va_dian.api.utils import (
 )
 
 
-# @frappe.whitelist()
-def get_text(elem: ET) -> str | None:
+def aux_get_text(elem: ET) -> str | None:
     """
     Helper to get text or None if missing
     """
     return elem.text.strip() if elem is not None and elem.text else None
 
 
-# @frappe.whitelist()
-def determine_type_of_document(find_result: ET) -> str | None:
+def aux_determine_type_of_document(find_result: ET) -> str | None:
     """
     Provides a dictionary with information contained on the XML document
     """
-    result = get_text(find_result)
+    result = aux_get_text(find_result)
     match result:
         case 'Contenedor de Factura Electrónica':
             return ElectronicDocument.FACTURA_ELECTRONICA
@@ -47,8 +45,7 @@ def determine_type_of_document(find_result: ET) -> str | None:
             return ElectronicDocument.INDETERMINADO
 
 
-# @frappe.whitelist()
-def extract_xml_info(docname) -> dict[str, str] | None:
+def aux_extract_xml_info(docname) -> dict[str, str] | None:
     """
     Provides a dictionary with information contained on the XML document
     """
@@ -87,7 +84,7 @@ def extract_xml_info(docname) -> dict[str, str] | None:
         # electronic document
         # ######################################################################
 
-        document_type = determine_type_of_document(root.find('cbc:DocumentType', document_namespace))
+        document_type = aux_determine_type_of_document(root.find('cbc:DocumentType', document_namespace))
         reg_issue_date = root.find('cbc:IssueDate', document_namespace)
         reg_issue_time = root.find('cbc:IssueTime', document_namespace)
         reg_sender_party_name = root.find('cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', document_namespace)
@@ -119,16 +116,16 @@ def extract_xml_info(docname) -> dict[str, str] | None:
                 extra_document_root = ET.fromstring(cdata)
 
                 # 1. The embedded Document uses the same cbc namespace, so reuse document_namespace
-                document_uuid = get_text(extra_document_root.find('.//cbc:UUID', document_namespace))
+                document_uuid = aux_get_text(extra_document_root.find('.//cbc:UUID', document_namespace))
 
                 # 2. Sender address
                 reg_sender_address_elem = extra_document_root.find('cac:AccountingSupplierParty/cac:Party/cac:PhysicalLocation/cac:Address', document_namespace)
                 if reg_sender_address_elem is not None:
                     document_sender_address = VA_DIAN_Address(
-                        street_name=get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
-                        city_name=get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
-                        postal_zone=get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
-                        country=get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
+                        street_name=aux_get_text(reg_sender_address_elem.find('cac:AddressLine/cbc:Line', document_namespace)),
+                        city_name=aux_get_text(reg_sender_address_elem.find('cbc:CityName', document_namespace)),
+                        postal_zone=aux_get_text(reg_sender_address_elem.find('cbc:PostalZone', document_namespace)),
+                        country=aux_get_text(reg_sender_address_elem.find('cac:Country/cbc:Name', document_namespace)),
                     )
 
                 # 3. Dependant on type of document
@@ -136,12 +133,12 @@ def extract_xml_info(docname) -> dict[str, str] | None:
                     case ElectronicDocument.FACTURA_ELECTRONICA:
                         # Extract item list
                         for line in extra_document_root.findall('.//cac:InvoiceLine', document_namespace):
-                            line_quantity = get_text(line.find('.//cbc:InvoicedQuantity', document_namespace))
-                            line_price = get_text(line.find('.//cac:Price/cbc:PriceAmount', document_namespace))
-                            line_extension_amount = get_text(line.find('.//cbc:LineExtensionAmount', document_namespace))
-                            line_taxable_amount = get_text(line.find('.//cbc:TaxableAmount', document_namespace))
-                            line_tax_amount = get_text(line.find('.//cbc:TaxAmount', document_namespace))
-                            line_description = get_text(line.find('.//cac:Item/cbc:Description', document_namespace))
+                            line_quantity = aux_get_text(line.find('.//cbc:InvoicedQuantity', document_namespace))
+                            line_price = aux_get_text(line.find('.//cac:Price/cbc:PriceAmount', document_namespace))
+                            line_extension_amount = aux_get_text(line.find('.//cbc:LineExtensionAmount', document_namespace))
+                            line_taxable_amount = aux_get_text(line.find('.//cbc:TaxableAmount', document_namespace))
+                            line_tax_amount = aux_get_text(line.find('.//cbc:TaxAmount', document_namespace))
+                            line_description = aux_get_text(line.find('.//cac:Item/cbc:Description', document_namespace))
                             if document_items is None:
                                 document_items = []
                             document_items.append(VA_DIAN_Item(
@@ -162,13 +159,13 @@ def extract_xml_info(docname) -> dict[str, str] | None:
         to_return = VA_DIAN_Document(
             document_type = document_type,
             uuid = document_uuid,
-            issue_date = get_text(reg_issue_date),
-            issue_time = get_text(reg_issue_time),
-            sender_party_name = get_text(reg_sender_party_name),
-            sender_party_id = get_text(reg_sender_party_id),
+            issue_date = aux_get_text(reg_issue_date),
+            issue_time = aux_get_text(reg_issue_time),
+            sender_party_name = aux_get_text(reg_sender_party_name),
+            sender_party_id = aux_get_text(reg_sender_party_id),
             sender_address = document_sender_address,
-            receiver_party_name = get_text(reg_receiver_party_name),
-            receiver_party_id = get_text(reg_receiver_party_id),
+            receiver_party_name = aux_get_text(reg_receiver_party_name),
+            receiver_party_id = aux_get_text(reg_receiver_party_id),
             items=document_items,
         )
 
@@ -189,7 +186,7 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
         frappe.throw("Please provide a document to update")
 
     # Obtain results from fecthing XML
-    xml_result = extract_xml_info(docname)
+    xml_result = aux_extract_xml_info(docname)
     if xml_result is None:
         return None
 
