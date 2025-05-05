@@ -40,6 +40,8 @@ def aux_determine_type_of_document(find_result: ET) -> str | None:
     match result:
         case 'Contenedor de Factura Electrónica':
             return ElectronicDocument.FACTURA_ELECTRONICA
+        case 'Contenedor de Factura Electronica':
+            return ElectronicDocument.FACTURA_ELECTRONICA
         case _:
             return ElectronicDocument.INDETERMINADO
 
@@ -216,6 +218,7 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     if doc.name != uuid_from_xml:
         doc.rename(uuid_from_xml)
         frappe.db.commit()
+        doc.reload()
 
     return doc.as_dict()
 
