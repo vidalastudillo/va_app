@@ -11,7 +11,10 @@
   "representation",
   "relaci\u00f3n_de_documentos_section",
   "related_document_type",
-  "related_document"
+  "related_document",
+  "contenido_extra\u00eddo_section",
+  "xml_content",
+  "xml_dian_tercero"
  ],
  "fields": [
   {
@@ -52,12 +55,28 @@
    "in_list_view": 1,
    "label": "Documento",
    "options": "related_document_type"
+  },
+  {
+   "fieldname": "contenido_extra\u00eddo_section",
+   "fieldtype": "Section Break",
+   "label": "Contenido extra\u00eddo"
+  },
+  {
+   "fieldname": "xml_content",
+   "fieldtype": "Long Text",
+   "label": "Contenido XML"
+  },
+  {
+   "fieldname": "xml_dian_tercero",
+   "fieldtype": "Link",
+   "label": "DIAN tercero",
+   "options": "DIAN tercero"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-03 13:37:54.161787",
+ "modified": "2025-05-04 19:18:34.935052",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN document",
