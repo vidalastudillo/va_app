@@ -46,10 +46,10 @@ def upsert_dian_tercero(content) -> str | None:
 
     # Common fields to update
     document_tercero.set('razon_social', content_validated.razon_social)
-    document_tercero.set('direcci\u00f3n_principal', content_validated.direccion_principal)
-    document_tercero.set('c\u00f3digo_postal', content_validated.codigo_postal)
+    document_tercero.set('direccion_principal', content_validated.direccion_principal)
+    document_tercero.set('codigo_postal', content_validated.codigo_postal)
     document_tercero.set('ciudad_municipio', content_validated.ciudad_municipio)
-    document_tercero.set('pa\u00eds', content_validated.pais)
+    document_tercero.set('pais', content_validated.pais)
 
     # Final database operations
     if are_we_inserting:
