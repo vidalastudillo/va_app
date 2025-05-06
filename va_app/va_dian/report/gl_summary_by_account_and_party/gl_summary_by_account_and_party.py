@@ -18,9 +18,12 @@ def execute(filters=None):
     entries = frappe.get_all("GL Entry",
         filters={"posting_date": ["between", [from_date, to_date]]},
         fields=[
-            "account", "party_type", "party",
+            "account",
+            "party_type",
+            "party",
             "SUM(debit) as total_debit", 
-            "SUM(credit) as total_credit"
+            "SUM(credit) as total_credit",
+            "SUM(debit-credit) as total"
         ],
         group_by="account, party_type, party",
         order_by="account, party_type, party"
@@ -28,11 +31,47 @@ def execute(filters=None):
 
     # Define report columns
     columns = [
-        {"fieldname":"account",    "label":"Account",     "fieldtype":"Link",         "options":"Account"},
-        {"fieldname":"party_type", "label":"Party Type",  "fieldtype":"Select",       "options":["Customer","Supplier","Employee","Shareholder"]},
-        {"fieldname":"party",      "label":"Party",       "fieldtype":"Dynamic Link","options":"party_type"},
-        {"fieldname":"total_debit","label":"Total Debit", "fieldtype":"Currency",      "options":"currency"},
-        {"fieldname":"total_credit","label":"Total Credit","fieldtype":"Currency",     "options":"currency"}
+        {
+            "fieldname":"account",
+            "label":"Account",
+            "fieldtype":"Link",
+            "options":"Account",
+            "width": 200
+        },
+        {
+            "fieldname":"party_type",
+            "label":"Party Type",
+            "fieldtype":"Select",
+            "options":["Customer","Supplier","Employee","Shareholder"]
+        },
+        {
+            "fieldname":"party",
+            "label":"Party",
+            "fieldtype":"Dynamic Link",
+            "options":"party_type",
+            "width": 140
+        },
+        {
+            "fieldname":"total_debit",
+            "label":"Total Debit",
+            "fieldtype":"Currency",
+            "options":"currency",
+            "width": 140
+        },
+        {
+            "fieldname":"total_credit",
+            "label":"Total Credit",
+            "fieldtype":"Currency",
+            "options":"currency",
+            "width": 140
+        },
+        {
+            "fieldname":"total",
+            "label":"Total D-C",
+            "fieldtype":"Currency",
+            "options":"currency",
+            "width": 140
+        }
     ]
 
     # Prepare data rows
@@ -43,7 +82,8 @@ def execute(filters=None):
             "party_type": row.get("party_type"),
             "party": row.get("party"),
             "total_debit": row.get("total_debit") or 0,
-            "total_credit": row.get("total_credit") or 0
+            "total_credit": row.get("total_credit") or 0,
+            "total": row.get("total") or 0
         })
 
     return columns, data
