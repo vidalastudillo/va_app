@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "VA",
  "links": [],
- "modified": "2025-05-07 16:18:58.559553",
+ "modified": "2025-05-07 16:20:30.145352",
  "modified_by": "Administrator",
  "module": "VA",
  "name": "VA",
@@ -35,7 +35,7 @@
   },
   {
    "color": "Grey",
-   "doc_view": "Report Builder",
+   "doc_view": "List",
    "label": "Terceros DIAN",
    "link_to": "DIAN tercero",
    "stats_filter": "[]",
