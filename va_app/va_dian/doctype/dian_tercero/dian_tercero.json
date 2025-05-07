@@ -30,9 +30,9 @@
   "telefono_1",
   "telefono_2",
   "column_break_hhzf",
-  "codigo_postal",
   "ciudad_municipio",
   "departamento",
+  "codigo_postal",
   "pais"
  ],
  "fields": [
@@ -219,7 +219,7 @@
    "link_fieldname": "custom_dian_tercero"
   }
  ],
- "modified": "2025-05-04 22:24:54.758723",
+ "modified": "2025-05-07 18:18:22.565859",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN tercero",
