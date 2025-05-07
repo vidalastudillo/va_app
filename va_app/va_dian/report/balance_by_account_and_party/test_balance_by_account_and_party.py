@@ -2,7 +2,7 @@
 Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-03
+Version 2025-05-07
 
 !!!
 DRAFT!
@@ -21,7 +21,7 @@ from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sal
 from erpnext.accounts.report.general_ledger.general_ledger import execute
 from erpnext.controllers.sales_and_purchase_return import make_return_doc
 
-from va_app.va.report.balance_por_cuenta_y_tercero.balance_por_cuenta_y_tercero import (
+from va_app.va_dian.report.balance_by_account_and_party import (
     remap_database_content,
 )
 
