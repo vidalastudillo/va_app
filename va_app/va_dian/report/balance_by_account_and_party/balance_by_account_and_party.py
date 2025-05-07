@@ -41,22 +41,10 @@ from va_app.va.api.erp_fieldnames import (
 	GL_ENTRY_FIELD_NAME_CLOSING_CREDIT,
 	DIAN_TERCERO_DOCTYPE_NAME,
 	DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO,
-	EMPLOYEE_DOCTYPE_NAME,
-	EMPLOYEE_FIELD_NAME_DIAN_TERCERO,
-	SHAREHOLDER_DOCTYPE_NAME,
-	SHAREHOLDER_FIELD_NAME_DIAN_TERCERO,
-	CUSTOMER_DOCTYPE_NAME,
-	CUSTOMER_FIELD_NAME_DIAN_TERCERO,
-	SUPPLIER_DOCTYPE_NAME,
-	SUPPLIER_FIELD_NAME_DIAN_TERCERO,
-	JOURNAL_FIELD_NAME_DIAN_TERCERO,
-	PAYMENT_FIELD_NAME_PARTY_TYPE,
-	PAYMENT_FIELD_NAME_PARTY,
-	PURCHASE_INVOICE_FIELD_NAME_PARTY,
-	PURCHASE_RECEIPT_FIELD_NAME_PARTY,
-	SALES_INVOICE_FIELD_NAME_PARTY,
-	DELIVERY_NOTE_FIELD_NAME_PARTY,
-	STOCK_ENTRY_FIELD_NAME_PARTY,
+)
+from va_app.va_dian.api.dian_tercero_utils import (
+	aux_get_dian_tercero_id_for_party,
+	aux_get_dian_tercero_id_from_doctype,
 )
 
 
@@ -238,101 +226,6 @@ def aux_build_dian_tercero_info(
 	return current_selected_party
 
 
-def aux_get_dian_tercero_info_for_party(
-		party_type: str,
-		party: str,
-	) -> str:
-	"""
-	Returns a string that identifies the party using their formal NIT and
-	Full Name from the DIAN tercero table.
-	"""
-
-	# Define fields to use to retrieve information from the DocType
-	match party_type:
-		case '*SpecialCaseTypeDIAN*':
-			selected_doctype = DIAN_TERCERO_DOCTYPE_NAME
-		case 'Employee':
-			selected_doctype = EMPLOYEE_DOCTYPE_NAME
-			selected_field_for_party = EMPLOYEE_FIELD_NAME_DIAN_TERCERO
-		case 'Shareholder':
-			selected_doctype = SHAREHOLDER_DOCTYPE_NAME
-			selected_field_for_party = SHAREHOLDER_FIELD_NAME_DIAN_TERCERO
-		case 'Customer':
-			selected_doctype = CUSTOMER_DOCTYPE_NAME
-			selected_field_for_party = CUSTOMER_FIELD_NAME_DIAN_TERCERO
-		case 'Supplier':
-			selected_doctype = SUPPLIER_DOCTYPE_NAME
-			selected_field_for_party = SUPPLIER_FIELD_NAME_DIAN_TERCERO
-		case _:
-			return UNKNOWN_PARTY
-
-	# Determine the NIT for the Party
-	match party_type:
-		case '*SpecialCaseTypeDIAN*':
-			current_nit = party
-		case _:
-			current_nit = frappe.db.get_value(selected_doctype, party, selected_field_for_party) or ""
-
-	# Build the response
-	current_selected_party = aux_build_dian_tercero_info(
-		nit=current_nit,
-	)
-	return current_selected_party
-
-
-def aux_get_dian_tercero_info_from_doctype(
-		doc_type: str,
-		doc_id: str,
-	) -> str:
-	"""
-	Using a DocType identified with the info provided, returns a string
-	that identifies the party using their formal NIT and Full Name whose
-	data is retrieved from the DIAN tercero table.
-	"""
-
-	# Values other than None means the Document may have multiple Party Types
-	retrieve_party_type_fieldname = None
-
-	match doc_type:
-		case 'Journal Entry':
-			selected_party_type = '*SpecialCaseTypeDIAN*'
-			selected_field_name_for_party = JOURNAL_FIELD_NAME_DIAN_TERCERO
-		case 'Payment Entry':
-			retrieve_party_type_fieldname = PAYMENT_FIELD_NAME_PARTY_TYPE
-			selected_field_name_for_party = PAYMENT_FIELD_NAME_PARTY
-		case 'Purchase Invoice':
-			selected_party_type = 'Supplier'
-			selected_field_name_for_party = PURCHASE_INVOICE_FIELD_NAME_PARTY
-		case 'Purchase Receipt':
-			selected_party_type = 'Supplier'
-			selected_field_name_for_party = PURCHASE_RECEIPT_FIELD_NAME_PARTY
-		case 'Sales Invoice':
-			selected_party_type = 'Customer'
-			selected_field_name_for_party = SALES_INVOICE_FIELD_NAME_PARTY
-		case 'Delivery Note':
-			selected_party_type = 'Customer'
-			selected_field_name_for_party = DELIVERY_NOTE_FIELD_NAME_PARTY
-		case 'Stock Entry':
-			selected_party_type = 'Supplier'
-			selected_field_name_for_party = STOCK_ENTRY_FIELD_NAME_PARTY
-		case _:
-			return UNKNOWN_PARTY
-
-	# For the cases that the Party Type is yet to be determined
-	if retrieve_party_type_fieldname is not None:
-		selected_party_type = frappe.db.get_value(doc_type, doc_id, retrieve_party_type_fieldname)
-
-	# Retrieve the Party from the DocType
-	selected_party = frappe.db.get_value(doc_type, doc_id, selected_field_name_for_party) or ""
-
-	# Take the ID of the tercero (NIT)
-	current_selected_party = aux_get_dian_tercero_info_for_party(
-		party_type=selected_party_type,
-		party=selected_party,
-	)
-	return current_selected_party
-
-
 def remap_database_content(
 	db_results: dict[object],
 ) -> list[dict[str, object]]:
@@ -380,24 +273,31 @@ def remap_database_content(
 		Determine the current party
 		"""
 
-		# If the party is specified for the record, then it prevail over the
+		# If the party is specified for the record, then it prevails over the
 		# document's
 		if current_party_type_from_gl is not None \
 			and current_party_type_from_gl != '' \
 			and current_party_from_gl is not None \
 			and current_party_from_gl != '':
 
-			current_selected_party = aux_get_dian_tercero_info_for_party(
+			# Get the Tercero ID
+			current_nit = aux_get_dian_tercero_id_for_party(
 				party_type=current_party_type_from_gl,
 				party=current_party_from_gl,
 			)
 
 		else:
-
-			current_selected_party = aux_get_dian_tercero_info_from_doctype(
+			# With no direct party on the record, extracts it from the
+			# associated Voucher
+			current_nit = aux_get_dian_tercero_id_from_doctype(
 				doc_type=current_voucher_type,
 				doc_id=current_voucher_no,
 			)
+
+		# Build a representation for the Tercero ID
+		current_selected_party = aux_build_dian_tercero_info(
+			nit=current_nit,
+		)
 
 		"""
 		Insert GL Entry into the result

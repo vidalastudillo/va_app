@@ -10,11 +10,34 @@ import frappe
 from va_app.va_dian.api.dian_data_models import (
     VA_DIAN_Tercero,    
 )
+from va_app.va.api.erp_fieldnames import (
+	UNKNOWN_PARTY,
+	DIAN_TERCERO_DOCTYPE_NAME,
+	EMPLOYEE_DOCTYPE_NAME,
+	EMPLOYEE_FIELD_NAME_DIAN_TERCERO,
+	SHAREHOLDER_DOCTYPE_NAME,
+	SHAREHOLDER_FIELD_NAME_DIAN_TERCERO,
+	CUSTOMER_DOCTYPE_NAME,
+	CUSTOMER_FIELD_NAME_DIAN_TERCERO,
+	SUPPLIER_DOCTYPE_NAME,
+	SUPPLIER_FIELD_NAME_DIAN_TERCERO,
+	JOURNAL_FIELD_NAME_DIAN_TERCERO,
+	PAYMENT_FIELD_NAME_PARTY_TYPE,
+	PAYMENT_FIELD_NAME_PARTY,
+	PURCHASE_INVOICE_FIELD_NAME_PARTY,
+	PURCHASE_RECEIPT_FIELD_NAME_PARTY,
+	SALES_INVOICE_FIELD_NAME_PARTY,
+	DELIVERY_NOTE_FIELD_NAME_PARTY,
+	STOCK_ENTRY_FIELD_NAME_PARTY,
+)
 
 
 def aux_get_dian_tercero(tercero_id) -> VA_DIAN_Tercero:
     """
-    Helper that provides a DIAN tercero object to ease result assignment.
+    Helper that provides a `DIAN tercero` object to ease result assignment.
+	Returns a `DIAN tercero` object:
+	- Populated from the `DIAN Tercero` table, if found.
+	- Populated with the resto of fields empty, otherwise.
     """
 
     # Retrive the record on table `DIAN tercero` for the ID
@@ -66,6 +89,94 @@ def aux_get_dian_tercero(tercero_id) -> VA_DIAN_Tercero:
         telefono_1=dian_tercero_record.get('telefono_1'),
     )
     return to_return
+
+
+def aux_get_dian_tercero_id_for_party(
+		party_type: str,
+		party: str,
+	) -> str:
+	"""
+	Returns the formal NIT from the `DIAN tercero` table for a `party`
+	depending on its `party_type`.
+	"""
+
+	# Define fields to use to retrieve information from the DocType
+	match party_type:
+		case '*SpecialCaseTypeDIAN*':
+			selected_doctype = DIAN_TERCERO_DOCTYPE_NAME
+		case 'Employee':
+			selected_doctype = EMPLOYEE_DOCTYPE_NAME
+			selected_field_for_party = EMPLOYEE_FIELD_NAME_DIAN_TERCERO
+		case 'Shareholder':
+			selected_doctype = SHAREHOLDER_DOCTYPE_NAME
+			selected_field_for_party = SHAREHOLDER_FIELD_NAME_DIAN_TERCERO
+		case 'Customer':
+			selected_doctype = CUSTOMER_DOCTYPE_NAME
+			selected_field_for_party = CUSTOMER_FIELD_NAME_DIAN_TERCERO
+		case 'Supplier':
+			selected_doctype = SUPPLIER_DOCTYPE_NAME
+			selected_field_for_party = SUPPLIER_FIELD_NAME_DIAN_TERCERO
+		case _:
+			return UNKNOWN_PARTY
+
+	# Determine the NIT for the Party
+	match party_type:
+		case '*SpecialCaseTypeDIAN*':
+			current_nit = party
+		case _:
+			current_nit = frappe.db.get_value(selected_doctype, party, selected_field_for_party) or ""
+	return current_nit
+
+
+def aux_get_dian_tercero_id_from_doctype(
+		doc_type: str,
+		doc_id: str,
+	) -> str:
+	"""
+	Using a DocType identified with the info provided, returns the ID from
+    the `DIAN tercero` table.
+	"""
+
+	# Values other than None means the Document may have multiple Party Types
+	retrieve_party_type_fieldname = None
+
+	match doc_type:
+		case 'Journal Entry':
+			selected_party_type = '*SpecialCaseTypeDIAN*'
+			selected_field_name_for_party = JOURNAL_FIELD_NAME_DIAN_TERCERO
+		case 'Payment Entry':
+			retrieve_party_type_fieldname = PAYMENT_FIELD_NAME_PARTY_TYPE
+			selected_field_name_for_party = PAYMENT_FIELD_NAME_PARTY
+		case 'Purchase Invoice':
+			selected_party_type = 'Supplier'
+			selected_field_name_for_party = PURCHASE_INVOICE_FIELD_NAME_PARTY
+		case 'Purchase Receipt':
+			selected_party_type = 'Supplier'
+			selected_field_name_for_party = PURCHASE_RECEIPT_FIELD_NAME_PARTY
+		case 'Sales Invoice':
+			selected_party_type = 'Customer'
+			selected_field_name_for_party = SALES_INVOICE_FIELD_NAME_PARTY
+		case 'Delivery Note':
+			selected_party_type = 'Customer'
+			selected_field_name_for_party = DELIVERY_NOTE_FIELD_NAME_PARTY
+		case 'Stock Entry':
+			selected_party_type = 'Supplier'
+			selected_field_name_for_party = STOCK_ENTRY_FIELD_NAME_PARTY
+		case _:
+			return UNKNOWN_PARTY
+
+	# For the cases that the Party Type is yet to be determined
+	if retrieve_party_type_fieldname is not None:
+		selected_party_type = frappe.db.get_value(doc_type, doc_id, retrieve_party_type_fieldname)
+
+	# Retrieve the Party from the DocType
+	selected_party = frappe.db.get_value(doc_type, doc_id, selected_field_name_for_party) or ""
+
+	# Return the ID of the tercero (NIT)
+	return aux_get_dian_tercero_id_for_party(
+		party_type=selected_party_type,
+		party=selected_party,
+	)
 
 
 @frappe.whitelist()
