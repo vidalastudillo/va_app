@@ -22,76 +22,51 @@ from erpnext.accounts.report.financial_statements import (
 	set_gl_entries_by_account,
 )
 from erpnext.accounts.report.utils import convert_to_presentation_currency, get_currency
+from va_app.va.api.erp_fieldnames import (
+	UNKNOWN_ACCOUNT,
+	UNKNOWN_PARTY,
+	GL_ENTRY_FIELD_NAME_ACCOUNTS,
+	GL_ENTRY_FIELD_NAME_PARTY,
+	GL_ENTRY_FIELD_NAME_PARTY_TYPE,
+	GL_ENTRY_FIELD_NAME_POSTING_DATE,
+	GL_ENTRY_FIELD_NAME_VOUCHER_TYPE,
+	GL_ENTRY_FIELD_NAME_VOUCHER_SUBTYPE,
+	GL_ENTRY_FIELD_NAME_VOUCHER_NO,
+	GL_ENTRY_FIELD_NAME_CURRENCY,
+	GL_ENTRY_FIELD_NAME_OPENING_DEBIT,
+	GL_ENTRY_FIELD_NAME_OPENING_CREDIT,
+	GL_ENTRY_FIELD_NAME_DEBIT,
+	GL_ENTRY_FIELD_NAME_CREDIT,
+	GL_ENTRY_FIELD_NAME_CLOSING_DEBIT,
+	GL_ENTRY_FIELD_NAME_CLOSING_CREDIT,
+	DIAN_TERCERO_DOCTYPE_NAME,
+	DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO,
+	EMPLOYEE_DOCTYPE_NAME,
+	EMPLOYEE_FIELD_NAME_DIAN_TERCERO,
+	SHAREHOLDER_DOCTYPE_NAME,
+	SHAREHOLDER_FIELD_NAME_DIAN_TERCERO,
+	CUSTOMER_DOCTYPE_NAME,
+	CUSTOMER_FIELD_NAME_DIAN_TERCERO,
+	SUPPLIER_DOCTYPE_NAME,
+	SUPPLIER_FIELD_NAME_DIAN_TERCERO,
+	JOURNAL_FIELD_NAME_DIAN_TERCERO,
+	PAYMENT_FIELD_NAME_PARTY_TYPE,
+	PAYMENT_FIELD_NAME_PARTY,
+	PURCHASE_INVOICE_FIELD_NAME_PARTY,
+	PURCHASE_RECEIPT_FIELD_NAME_PARTY,
+	SALES_INVOICE_FIELD_NAME_PARTY,
+	DELIVERY_NOTE_FIELD_NAME_PARTY,
+	STOCK_ENTRY_FIELD_NAME_PARTY,
+)
 
 
 # This should be off on production
 ENABLE_DEVELOPMENT_LOGS = False
 
-
 # Fields on GL Entry Query
 CUSTOM_FIELD_NAME_GROUPING = "grouping"
-FIELD_NAME_ACCOUNTS = "account"
-FIELD_NAME_PARTY_ON_GL_ENTRY = "party"
-FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY = "party_type"
 CUSTOM_FIELD_NAME_PARTY_ON_RESULT = "party_selected"
 CUSTOM_FIELD_NAME_GL_ENTRY = "gl_entry"
-FIELD_NAME_POSTING_DATE = "posting_date"
-FIELD_NAME_VOUCHER_TYPE = "voucher_type"
-FIELD_NAME_VOUCHER_SUBTYPE = "voucher_subtype"
-FIELD_NAME_VOUCHER_NO = "voucher_no"
-FIELD_NAME_CURRENCY = "currency"
-FIELD_NAME_OPENING_DEBIT = "opening_debit"
-FIELD_NAME_OPENING_CREDIT = "opening_credit"
-FIELD_NAME_DEBIT = "debit"
-FIELD_NAME_CREDIT = "credit"
-FIELD_NAME_CLOSING_DEBIT = "closing_debit"
-FIELD_NAME_CLOSING_CREDIT = "closing_credit"
-
-# Unknowns
-UNKNOWN_ACCOUNT = "UNKNOWN_ACCOUNT"
-UNKNOWN_PARTY = "UNKNOWN_PARTY"
-
-# DIAN tercero
-DIAN_TERCERO_DOCTYPE_NAME = "DIAN tercero"
-DIAN_TERCERO_FIELD_NAME_NOMBRE_COMPLETO = "nombre_completo"
-
-# Employee
-EMPLOYEE_DOCTYPE_NAME = "Employee"
-EMPLOYEE_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-
-# Shareholder
-SHAREHOLDER_DOCTYPE_NAME = "Shareholder"
-SHAREHOLDER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-
-# Customer
-CUSTOMER_DOCTYPE_NAME = "Customer"
-CUSTOMER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-
-# Supplier
-SUPPLIER_DOCTYPE_NAME = "Supplier"
-SUPPLIER_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-
-# Journal fields
-JOURNAL_FIELD_NAME_DIAN_TERCERO = "custom_dian_tercero"
-
-# Payment fields
-PAYMENT_FIELD_NAME_PARTY_TYPE = "party_type"
-PAYMENT_FIELD_NAME_PARTY = "party"
-
-# Purchase Invoice
-PURCHASE_INVOICE_FIELD_NAME_PARTY = "supplier"
-
-# Purchase Receipt
-PURCHASE_RECEIPT_FIELD_NAME_PARTY = "supplier"
-
-# Sales Invoice
-SALES_INVOICE_FIELD_NAME_PARTY = "customer"
-
-# Delivery Note
-DELIVERY_NOTE_FIELD_NAME_PARTY = "customer"
-
-# Stock Entry
-STOCK_ENTRY_FIELD_NAME_PARTY = "supplier"
 
 
 def execute(filters=None):
@@ -113,14 +88,14 @@ def get_report_data(filters):
 	# TODO: Filters are not yet implemented
 
 	# TODO: Ensure this works
-	order_by_statement = f"""order by {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, creation"""
+	order_by_statement = f"""order by {GL_ENTRY_FIELD_NAME_POSTING_DATE}, {GL_ENTRY_FIELD_NAME_ACCOUNTS}, creation"""
 
 	gl_entries = frappe.db.sql(
 		f"""
 		select
-			name as {CUSTOM_FIELD_NAME_GL_ENTRY}, {FIELD_NAME_POSTING_DATE}, {FIELD_NAME_ACCOUNTS}, {FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY}, {FIELD_NAME_PARTY_ON_GL_ENTRY},
-			{FIELD_NAME_DEBIT}, {FIELD_NAME_CREDIT},
-			{FIELD_NAME_VOUCHER_TYPE}, {FIELD_NAME_VOUCHER_SUBTYPE}, {FIELD_NAME_VOUCHER_NO},
+			name as {CUSTOM_FIELD_NAME_GL_ENTRY}, {GL_ENTRY_FIELD_NAME_POSTING_DATE}, {GL_ENTRY_FIELD_NAME_ACCOUNTS}, {GL_ENTRY_FIELD_NAME_PARTY_TYPE}, {GL_ENTRY_FIELD_NAME_PARTY},
+			{GL_ENTRY_FIELD_NAME_DEBIT}, {GL_ENTRY_FIELD_NAME_CREDIT},
+			{GL_ENTRY_FIELD_NAME_VOUCHER_TYPE}, {GL_ENTRY_FIELD_NAME_VOUCHER_SUBTYPE}, {GL_ENTRY_FIELD_NAME_VOUCHER_NO},
 			cost_center, project,
 			against_voucher_type, against_voucher, account_currency,
 			against, is_opening, creation
@@ -159,83 +134,83 @@ def get_report_columns():
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_PARTY_ON_GL_ENTRY,
+			"fieldname": GL_ENTRY_FIELD_NAME_PARTY,
 			"label": _("Party on GL"),
 			"fieldtype": "Data",
 			"width": 150,
 			"hidden": 1,
 		},
 		{
-			"fieldname": FIELD_NAME_POSTING_DATE,
+			"fieldname": GL_ENTRY_FIELD_NAME_POSTING_DATE,
 			"label": _("Posting Date"),
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"fieldname": FIELD_NAME_VOUCHER_TYPE,
+			"fieldname": GL_ENTRY_FIELD_NAME_VOUCHER_TYPE,
 			"label": _("Voucher Type"),
 			"fieldtype": "Data",
 			"width": 200,
 			"hidden": 1,
 		},
 		{
-			"fieldname": FIELD_NAME_VOUCHER_SUBTYPE,
+			"fieldname": GL_ENTRY_FIELD_NAME_VOUCHER_SUBTYPE,
 			"label": _("Voucher Subtype"),
 			"fieldtype": "Data",
 			"width": 200,
 			"hidden": 1,
 		},
 		{
-			"fieldname": FIELD_NAME_VOUCHER_NO,
+			"fieldname": GL_ENTRY_FIELD_NAME_VOUCHER_NO,
 			"label": _("Voucher"),
 			"fieldtype": "Dynamic Link",
 			"options": "voucher_type",
 			"width": 200,
 		},
 		{
-			"fieldname": FIELD_NAME_CURRENCY,
+			"fieldname": GL_ENTRY_FIELD_NAME_CURRENCY,
 			"label": _("Currency"),
 			"fieldtype": "Link",
 			"options": "Currency",
 			"hidden": 1,
 		},
 		{
-			"fieldname": FIELD_NAME_OPENING_DEBIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_OPENING_DEBIT,
 			"label": _("Opening (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_OPENING_CREDIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_OPENING_CREDIT,
 			"label": _("Opening (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_DEBIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_DEBIT,
 			"label": _("Debit"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_CREDIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_CREDIT,
 			"label": _("Credit"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_CLOSING_DEBIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_CLOSING_DEBIT,
 			"label": _("Closing (Dr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
 			"width": 150,
 		},
 		{
-			"fieldname": FIELD_NAME_CLOSING_CREDIT,
+			"fieldname": GL_ENTRY_FIELD_NAME_CLOSING_CREDIT,
 			"label": _("Closing (Cr)"),
 			"fieldtype": "Currency",
 			"options": "currency",
@@ -389,17 +364,17 @@ def remap_database_content(
 		"""
 
 		# Make sure the account key exists on our temporal
-		current_account = single_gl_entry.get(FIELD_NAME_ACCOUNTS)
+		current_account = single_gl_entry.get(GL_ENTRY_FIELD_NAME_ACCOUNTS)
 		if current_account is None:
 			current_account = UNKNOWN_ACCOUNT
 		if current_account not in temporal_grouping_dict:
 			temporal_grouping_dict[current_account] = {}
 
 		# Determine the party based on the voucher
-		current_voucher_type = single_gl_entry.get(FIELD_NAME_VOUCHER_TYPE)
-		current_voucher_no = single_gl_entry.get(FIELD_NAME_VOUCHER_NO)
-		current_party_type_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_TYPE_ON_GL_ENTRY)
-		current_party_from_gl = single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY)
+		current_voucher_type = single_gl_entry.get(GL_ENTRY_FIELD_NAME_VOUCHER_TYPE)
+		current_voucher_no = single_gl_entry.get(GL_ENTRY_FIELD_NAME_VOUCHER_NO)
+		current_party_type_from_gl = single_gl_entry.get(GL_ENTRY_FIELD_NAME_PARTY_TYPE)
+		current_party_from_gl = single_gl_entry.get(GL_ENTRY_FIELD_NAME_PARTY)
 
 		"""
 		Determine the current party
@@ -434,18 +409,18 @@ def remap_database_content(
 
 		# Build the record to append to the dict
 		record_constructed = {
-			FIELD_NAME_PARTY_ON_GL_ENTRY: single_gl_entry.get(FIELD_NAME_PARTY_ON_GL_ENTRY),
+			GL_ENTRY_FIELD_NAME_PARTY: single_gl_entry.get(GL_ENTRY_FIELD_NAME_PARTY),
 			CUSTOM_FIELD_NAME_GL_ENTRY: single_gl_entry.get(CUSTOM_FIELD_NAME_GL_ENTRY),
-			FIELD_NAME_POSTING_DATE: single_gl_entry.get(FIELD_NAME_POSTING_DATE),
-			FIELD_NAME_VOUCHER_TYPE: current_voucher_type,
-			FIELD_NAME_VOUCHER_NO: current_voucher_no,
-			FIELD_NAME_CURRENCY: single_gl_entry.get(FIELD_NAME_CURRENCY),
-			FIELD_NAME_OPENING_DEBIT: single_gl_entry.get(FIELD_NAME_OPENING_DEBIT),
-			FIELD_NAME_OPENING_CREDIT: single_gl_entry.get(FIELD_NAME_OPENING_CREDIT),
-			FIELD_NAME_DEBIT: single_gl_entry.get(FIELD_NAME_DEBIT),
-			FIELD_NAME_CREDIT: single_gl_entry.get(FIELD_NAME_CREDIT),
-			FIELD_NAME_CLOSING_DEBIT: single_gl_entry.get(FIELD_NAME_CLOSING_DEBIT),
-			FIELD_NAME_CLOSING_CREDIT: single_gl_entry.get(FIELD_NAME_CLOSING_CREDIT),
+			GL_ENTRY_FIELD_NAME_POSTING_DATE: single_gl_entry.get(GL_ENTRY_FIELD_NAME_POSTING_DATE),
+			GL_ENTRY_FIELD_NAME_VOUCHER_TYPE: current_voucher_type,
+			GL_ENTRY_FIELD_NAME_VOUCHER_NO: current_voucher_no,
+			GL_ENTRY_FIELD_NAME_CURRENCY: single_gl_entry.get(GL_ENTRY_FIELD_NAME_CURRENCY),
+			GL_ENTRY_FIELD_NAME_OPENING_DEBIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_OPENING_DEBIT),
+			GL_ENTRY_FIELD_NAME_OPENING_CREDIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_OPENING_CREDIT),
+			GL_ENTRY_FIELD_NAME_DEBIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_DEBIT),
+			GL_ENTRY_FIELD_NAME_CREDIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_CREDIT),
+			GL_ENTRY_FIELD_NAME_CLOSING_DEBIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_CLOSING_DEBIT),
+			GL_ENTRY_FIELD_NAME_CLOSING_CREDIT: single_gl_entry.get(GL_ENTRY_FIELD_NAME_CLOSING_CREDIT),
 		}
 
 		if ENABLE_DEVELOPMENT_LOGS:
