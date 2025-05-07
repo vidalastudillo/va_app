@@ -2,7 +2,7 @@
 Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-05
+Version 2025-05-07
 
 --------------------------------------------------------------------------------
 
@@ -29,23 +29,23 @@ class VA_DIAN_Tercero:
     """Information about a DIAN Tercero"""
 
     nit: str
-    numero_de_identificacion: str | None
-    tipo_de_documento: str | None
-    tipo_de_contribuyente: str | None
-    primer_apellido: str | None
-    segundo_apellido: str | None
-    primer_nombre: str | None
-    otros_nombres: str | None
-    razon_social: str | None
-    nombre_comercial: str | None
-    correo_electronico: str | None
-    telefono_1: str | None
-    telefono_2: str | None
-    direccion_principal: str | None
-    ciudad_municipio: str | None
-    departamento: str | None
-    codigo_postal: str | None
-    pais: str | None
+    numero_de_identificacion: str | None = field(default=None)
+    tipo_de_documento: str | None = field(default=None)
+    tipo_de_contribuyente: str | None = field(default=None)
+    primer_apellido: str | None = field(default=None)
+    segundo_apellido: str | None = field(default=None)
+    primer_nombre: str | None = field(default=None)
+    otros_nombres: str | None = field(default=None)
+    razon_social: str | None = field(default=None)
+    nombre_comercial: str | None = field(default=None)
+    correo_electronico: str | None = field(default=None)
+    telefono_1: str | None = field(default=None)
+    telefono_2: str | None = field(default=None)
+    direccion_principal: str | None = field(default=None)
+    ciudad_municipio: str | None = field(default=None)
+    departamento: str | None = field(default=None)
+    codigo_postal: str | None = field(default=None)
+    pais: str | None = field(default=None)
 
     def dict(self):
         """
