@@ -26,65 +26,9 @@ As I have mentioned initially, the `custom_dian_tercero` is a `custom field` of 
 
 import frappe
 from frappe import _
-from va_app.va_dian.api.dian_data_models import (
-    VA_DIAN_Tercero,
+from va_app.va_dian.api.dian_tercero_utils import (
+    aux_get_dian_tercero,
 )
-
-
-def aux_get_dian_tercero(tercero_id) -> VA_DIAN_Tercero:
-    """
-    Helper that provides a DIAN tercero object to ease result assignment.
-    """
-
-    # Retrive the record on table `DIAN tercero` for the ID
-    dian_tercero_records = frappe.db.get_all(
-        doctype='DIAN tercero',
-        fields=[
-            "razon_social",
-            "nombre_comercial",
-            "primer_apellido",
-            "segundo_apellido",
-            "primer_nombre",
-            "otros_nombres",
-            "direccion_principal",
-            "ciudad_municipio",
-            "departamento",
-            "pais",
-            "codigo_postal",
-            "correo_electronico",
-            "telefono_1",
-        ],
-        filters={"name": tercero_id},
-    )
-
-    # Check if there is a valid record returned
-    if len(dian_tercero_records)<1:
-        # No record, means an empty class is returned.
-        return VA_DIAN_Tercero(
-            nit=tercero_id,
-        )
-
-    # Select a single record from the list
-    dian_tercero_record = dian_tercero_records[0]
-
-    # Build the class content to be returned
-    to_return = VA_DIAN_Tercero(
-        nit=tercero_id,
-        razon_social=dian_tercero_record.get('razon_social'),
-        nombre_comercial=dian_tercero_record.get('nombre_comercial'),
-        primer_apellido=dian_tercero_record.get('primer_apellido'),
-        segundo_apellido=dian_tercero_record.get('segundo_apellido'),
-        primer_nombre=dian_tercero_record.get('primer_nombre'),
-        otros_nombres=dian_tercero_record.get('otros_nombres'),
-        direccion_principal=dian_tercero_record.get('direccion_principal'),
-        ciudad_municipio=dian_tercero_record.get('ciudad_municipio'),
-        departamento=dian_tercero_record.get('departamento'),
-        pais=dian_tercero_record.get('pais'),
-        codigo_postal=dian_tercero_record.get('codigo_postal'),
-        correo_electronico=dian_tercero_record.get('correo_electronico'),
-        telefono_1=dian_tercero_record.get('telefono_1'),
-    )
-    return to_return
 
 
 def execute(filters=None):
