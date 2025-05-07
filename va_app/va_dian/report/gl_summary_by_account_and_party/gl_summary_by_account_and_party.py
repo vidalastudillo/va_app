@@ -4,7 +4,7 @@ For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
 Version 2025-05-07
 
-* PROMPT USED *
+* PROMPT USED (for the draft of this module) *
 
 Please consider this related to a custom `Frappe` 15 custom app called `VA DIAN`:
 
@@ -28,6 +28,8 @@ import frappe
 from frappe import _
 from va_app.va_dian.api.dian_tercero_utils import (
     aux_get_dian_tercero,
+    aux_get_dian_tercero_id_for_party,
+    aux_get_dian_tercero_id_from_doctype,
 )
 
 
@@ -170,15 +172,20 @@ def execute(filters=None):
         account = e.account
         tercero_id = None
 
-        # Resolve tercero_id via party document
+        # Resolve tercero_id via party information if present
         if e.party_type and e.party:
-            # e.g. e.party_type = 'Customer', e.party = 'CUST-001'
-            tercero_id = frappe.get_value(e.party_type, e.party, "custom_dian_tercero")
+            tercero_id = aux_get_dian_tercero_id_for_party(
+                party_type=e.party_type,
+                party=e.party,
+            )
             # print(f"GOT value: {tercero_id} from identified fields")
-        elif e.voucher_type == "Journal Entry" and e.voucher_no:
+        elif e.voucher_type and e.voucher_no:
             # For Journal Entries, retrieve from Journal Entry record
-            tercero_id = frappe.get_value("Journal Entry", e.voucher_no, "custom_dian_tercero")
-            # print(f"GOT value: {tercero_id} from Journal")
+            tercero_id = aux_get_dian_tercero_id_from_doctype(
+                doc_type=e.voucher_type,
+                doc_id=e.voucher_no,
+            )
+            # print(f"GOT value: {tercero_id} from Document")
 
         # Use None or blank if not found
         tercero_id = tercero_id or ""
