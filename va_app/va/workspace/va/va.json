@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"Gv0cNC1ZEp\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">VA</span>\",\"col\":12}},{\"id\":\"ynax68uZew\",\"type\":\"card\",\"data\":{\"card_name\":\"Documentos Electr\u00f3nicos\",\"col\":4}},{\"id\":\"h-5hgDot11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Terceros DIAN\",\"col\":3}}]",
+ "content": "[{\"id\":\"Gv0cNC1ZEp\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">VA</span>\",\"col\":12}},{\"id\":\"AcivzIskps\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Terceros DIAN\",\"col\":5}},{\"id\":\"wpO2zq4M7e\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Documentos Electr\u00f3nicos DIAN\",\"col\":5}},{\"id\":\"_bABVMDwVK\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"NMO7CcznjC\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reportes <br></b></span>\",\"col\":12}},{\"id\":\"uLqvb8eRQB\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Gl Summary By Account And Party\",\"col\":5}},{\"id\":\"L3HlzV42AF\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Balance By Account And Party\",\"col\":5}}]",
  "creation": "2025-05-07 15:54:32.523873",
  "custom_blocks": [],
  "docstatus": 0,
@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "VA",
  "links": [],
- "modified": "2025-05-07 16:15:43.377856",
+ "modified": "2025-05-07 16:18:58.559553",
  "modified_by": "Administrator",
  "module": "VA",
  "name": "VA",
@@ -24,6 +24,39 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 39.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Documentos Electr\u00f3nicos DIAN",
+   "link_to": "DIAN document",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "Report Builder",
+   "label": "Terceros DIAN",
+   "link_to": "DIAN tercero",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Gl Summary By Account And Party",
+   "link_to": "GL Summary by Account and Party",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Balance By Account And Party",
+   "link_to": "Balance by Account and Party",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  }
+ ],
  "title": "VA"
 }
