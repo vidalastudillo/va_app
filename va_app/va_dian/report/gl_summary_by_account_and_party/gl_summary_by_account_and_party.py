@@ -106,11 +106,32 @@ def execute(filters=None):
             "width": 200
         },
         {
+            "fieldname": "total_debit",
+            "label": _("Total Debit"),
+            "fieldtype": "Currency",
+            "options": "currency",
+            "width": 150
+        },
+        {
+            "fieldname": "total_credit",
+            "label": _("Total Credit"),
+            "fieldtype": "Currency",
+            "options": "currency",
+            "width": 150
+        },
+        {
+            "fieldname": "total",
+            "label": _("Total D-C"),
+            "fieldtype": "Currency",
+            "options": "currency",
+            "width": 150
+        },
+        {
             "fieldname": "tercero_id",
             "label": _("DIAN Tercero"),
             "fieldtype": "Link",
             "options": "DIAN tercero",
-            "width": 140
+            "width": 120
         },
         {
             "fieldname": "tercero_razon_social",
@@ -190,27 +211,6 @@ def execute(filters=None):
             "fieldtype": "Text",
             "width": 120
         },
-        {
-            "fieldname": "total_debit",
-            "label": _("Total Debit"),
-            "fieldtype": "Currency",
-            "options": "currency",
-            "width": 140
-        },
-        {
-            "fieldname": "total_credit",
-            "label": _("Total Credit"),
-            "fieldtype": "Currency",
-            "options": "currency",
-            "width": 140
-        },
-        {
-            "fieldname": "total",
-            "label": _("Total D-C"),
-            "fieldtype": "Currency",
-            "options": "currency",
-            "width": 140
-        }
     ]
 
     # Fetch GL Entries in date range
@@ -290,9 +290,9 @@ def execute(filters=None):
             "tercero_codigo_postal": vals.get("tercero_codigo_postal"),
             "tercero_correo_electronico": vals.get("tercero_correo_electronico"),
             "tercero_telefono_1": vals.get("tercero_telefono_1"),
-            "total_debit": vals.get("total_debit") or 0,
-            "total_credit": vals.get("total_credit") or 0,
-            "total": vals.get("total") or 0
+            "total_debit": round(vals.get("total_debit"), 2) or 0,
+            "total_credit": round(vals.get("total_credit"), 2) or 0,
+            "total": round(vals.get("total"), 2) or 0
         })
 
     return columns, data
