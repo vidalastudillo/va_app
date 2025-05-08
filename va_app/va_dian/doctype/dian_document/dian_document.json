@@ -23,16 +23,16 @@
    "label": "Soportes"
   },
   {
+   "description": "Archivo XML",
    "fieldname": "xml",
    "fieldtype": "Attach",
-   "label": "XML",
-   "make_attachment_public": 1
+   "label": "XML"
   },
   {
+   "description": "Representaci\u00f3n gr\u00e1fica del documento",
    "fieldname": "representation",
    "fieldtype": "Attach",
-   "label": "Representaci\u00f3n",
-   "make_attachment_public": 1
+   "label": "Representaci\u00f3n"
   },
   {
    "fieldname": "relaci\u00f3n_de_documentos_section",
@@ -76,7 +76,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-04 19:18:34.935052",
+ "modified": "2025-05-07 21:53:48.416628",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN document",

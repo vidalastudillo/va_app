@@ -100,6 +100,7 @@
    "reqd": 1
   },
   {
+   "description": "Archivo RUT",
    "fieldname": "rut",
    "fieldtype": "Attach",
    "in_list_view": 1,
@@ -226,7 +227,7 @@
    "link_fieldname": "custom_dian_tercero"
   }
  ],
- "modified": "2025-05-07 19:40:52.289896",
+ "modified": "2025-05-07 21:54:35.505181",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN tercero",
