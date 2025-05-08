@@ -20,6 +20,7 @@
   "segundo_apellido",
   "primer_nombre",
   "otros_nombres",
+  "sigla",
   "section_break_pviw",
   "nombre_completo",
   "column_break_yucj",
@@ -189,6 +190,11 @@
    "fieldname": "identificacion_section",
    "fieldtype": "Section Break",
    "label": "Identificaci\u00f3n"
+  },
+  {
+   "fieldname": "sigla",
+   "fieldtype": "Data",
+   "label": "Sigla"
   }
  ],
  "grid_page_length": 50,
@@ -220,7 +226,7 @@
    "link_fieldname": "custom_dian_tercero"
   }
  ],
- "modified": "2025-05-07 19:34:58.324222",
+ "modified": "2025-05-07 19:40:52.289896",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN tercero",
