@@ -31,13 +31,21 @@ from va_app.va_dian.api.dian_tercero_utils import (
     aux_get_dian_tercero_id_for_party,
     aux_get_dian_tercero_id_from_doctype,
 )
+# from erpnext.accounts.report.financial_statements import (
+# 	compute_growth_view_data,
+# 	get_columns,
+# 	get_data,
+# 	get_filtered_list_for_consolidated_report,
+# 	get_period_list,
+# )
 
 
 def execute(filters=None):
     filters = filters or {}
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
-    group_by_voucher_type = filters.get("group_by_voucher_type") or False  # boolean
+    group_by_voucher_type = filters.get("group_by_voucher_type")  # boolean
+    use_int_values = filters.get("use_int_values")  # boolean
 
     # Validate filters
     if not from_date or not to_date:
@@ -72,23 +80,23 @@ def execute(filters=None):
         {
             "fieldname": "total_debit",
             "label": _("Total Debit"),
-            "fieldtype": "Currency",
-            "options": "currency",
+            "fieldtype": "Text" if use_int_values else "Currency",
+            "options": None if use_int_values else "currency",
             "width": 150
         },
         {
             "fieldname": "total_credit",
             "label": _("Total Credit"),
-            "fieldtype": "Currency",
-            "options": "currency",
+            "fieldtype": "Text" if use_int_values else "Currency",
+            "options": None if use_int_values else "currency",
             "width": 150
         },
         {
             "fieldname": "total",
             "label": _("Total D-C"),
-            "fieldtype": "Currency",
-            "options": "currency",
-            "width": 150
+            "fieldtype": "Text" if use_int_values else "Currency",
+            "options": None if use_int_values else "currency",
+            "width": 150,
         },
         {
             "fieldname": "tercero_razon_social",
@@ -258,6 +266,17 @@ def execute(filters=None):
     the_key = ('the_account', 'the_tercero', 'the_voucher_type') if group_by_voucher_type else ('the_account', 'the_tercero')
     for the_key, the_values in data_map.items():
 
+        # Values should be rounded and converted into ints if required
+        amount_of_decimals = 0 if use_int_values else 2
+        total_debit = round(the_values.get("total_debit"), amount_of_decimals) or 0
+        total_credit = round(the_values.get("total_credit"), amount_of_decimals) or 0
+        total = round(the_values.get("total"), amount_of_decimals) or 0
+
+        if use_int_values:
+            total_debit = int(total_debit)
+            total_credit = int(total_credit)
+            total = int(total)
+
         data_to_append = {
             "account": the_values.get("account"),
             "tercero_id": the_values.get("tercero_id"),
@@ -274,9 +293,10 @@ def execute(filters=None):
             "tercero_codigo_postal": the_values.get("tercero_codigo_postal"),
             "tercero_correo_electronico": the_values.get("tercero_correo_electronico"),
             "tercero_telefono_1": the_values.get("tercero_telefono_1"),
-            "total_debit": round(the_values.get("total_debit"), 2) or 0,
-            "total_credit": round(the_values.get("total_credit"), 2) or 0,
-            "total": round(the_values.get("total"), 2) or 0
+            # Without str format won't be the expected
+            "total_debit": str(total_debit),
+            "total_credit": str(total_credit),
+            "total": str(total),
         }
         if group_by_voucher_type:
             data_to_append.update({

@@ -26,6 +26,11 @@ frappe.query_reports["GL Summary by Account and Party"] = {
 			"fieldname": "group_by_voucher_type",
 			"label": "Group by Voucher Type",
 			"fieldtype": "Check",
+		},
+		{
+			"fieldname": "use_int_values",
+			"label": "Use integer values",
+			"fieldtype": "Check",
 		}
 	]
 };
