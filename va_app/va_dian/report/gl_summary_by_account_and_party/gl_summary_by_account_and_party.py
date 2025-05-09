@@ -2,7 +2,7 @@
 Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-07
+Version 2025-05-09
 
 * PROMPT USED (for the draft of this module) *
 
@@ -37,6 +37,7 @@ def execute(filters=None):
     filters = filters or {}
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
+    group_by_voucher_type = filters.get("group_by_voucher_type") or False  # boolean
 
     # Validate filters
     if not from_date or not to_date:
@@ -51,6 +52,23 @@ def execute(filters=None):
             "options":"Account",
             "width": 200
         },
+        {
+            "fieldname": "tercero_id",
+            "label": _("DIAN Tercero"),
+            "fieldtype": "Link",
+            "options": "DIAN tercero",
+            "width": 120
+        },
+    ]
+    # Optional column
+    if group_by_voucher_type:
+        columns.append({
+            "label": _("Voucher Type"),
+            "fieldname": "voucher_type",
+            "width": 150
+        })
+    # Remaining required columns
+    columns += [
         {
             "fieldname": "total_debit",
             "label": _("Total Debit"),
@@ -71,13 +89,6 @@ def execute(filters=None):
             "fieldtype": "Currency",
             "options": "currency",
             "width": 150
-        },
-        {
-            "fieldname": "tercero_id",
-            "label": _("DIAN Tercero"),
-            "fieldtype": "Link",
-            "options": "DIAN tercero",
-            "width": 120
         },
         {
             "fieldname": "tercero_razon_social",
@@ -163,13 +174,17 @@ def execute(filters=None):
     entries = frappe.db.get_all("GL Entry",
         fields=["account", "party_type", "party", "voucher_type", "voucher_no", "debit", "credit"],
         filters={"posting_date": ["between", [from_date, to_date]]},
-        order_by="account",
+        order_by="account, voucher_type, posting_date",
 	)
 
-    # Aggregate by (account, tercero_id)
-    summary = {}
+    # We'll use a dict to aggregate the results. Its key is a tuple composed
+    # by account, tercero_id, and - optionally - voucher_type 
+    data_map = {}
     for e in entries:
-        account = e.account
+        # ######################################################################
+        # Preliminar: Determining Tercero Key
+        # ######################################################################
+
         tercero_id = None
 
         # Resolve tercero_id via party information if present
@@ -190,15 +205,27 @@ def execute(filters=None):
         # Use None or blank if not found
         tercero_id = tercero_id or ""
 
+        # ######################################################################
+        # Building the Map Key
+        # ######################################################################
+
         # Key by account and tercero_id
-        key = (account, tercero_id)
+        group_key = (e.account, tercero_id)
+
+        # Add voucher_type grouping
+        if group_by_voucher_type:
+            group_key = (*group_key, e.voucher_type)
+
+        # ######################################################################
+        # Building the Map
+        # ######################################################################
 
         # If key is not yet on the records, it is created
-        if key not in summary:
+        if group_key not in data_map:
             # Detail about the Tercero is populated
             tercero_detail = aux_get_dian_tercero(tercero_id)
-            summary[key] = {
-                "account": account,
+            data_map[group_key] = {
+                "account": e.account,
                 "tercero_id": tercero_id,
                 "tercero_razon_social": tercero_detail.razon_social,
                 "tercero_nombre_comercial": tercero_detail.nombre_comercial,
@@ -217,33 +244,45 @@ def execute(filters=None):
                 "total_credit": 0.0,
                 "total": 0.0,
             }
+            # Append the the optional data
+            if group_by_voucher_type:
+                data_map[group_key]["voucher_type"] = e.voucher_type
 
-        summary[key]["total_debit"] += e.debit
-        summary[key]["total_credit"] += e.credit
-        summary[key]["total"] += (e.debit - e.credit)
+        data_map[group_key]["total_debit"] += e.debit
+        data_map[group_key]["total_credit"] += e.credit
+        data_map[group_key]["total"] += (e.debit - e.credit)
 
-    # Prepare data rows
+    # Prepare the data for the report
     data = []
-    for (acct, terc), vals in summary.items():
-        data.append({
-            "account": vals.get("account"),
-            "tercero_id": vals.get("tercero_id"),
-            "tercero_razon_social": vals.get("tercero_razon_social"),
-            "tercero_nombre_comercial": vals.get("tercero_nombre_comercial"),
-            "tercero_primer_apellido": vals.get("tercero_primer_apellido"),
-            "tercero_segundo_apellido": vals.get("tercero_segundo_apellido"),
-            "tercero_primer_nombre": vals.get("tercero_primer_nombre"),
-            "tercero_otros_nombres": vals.get("tercero_otros_nombres"),
-            "tercero_direccion_principal": vals.get("tercero_direccion_principal"),
-            "tercero_ciudad_municipio": vals.get("tercero_ciudad_municipio"),
-            "tercero_departamento": vals.get("tercero_departamento"),
-            "tercero_pais": vals.get("tercero_pais"),
-            "tercero_codigo_postal": vals.get("tercero_codigo_postal"),
-            "tercero_correo_electronico": vals.get("tercero_correo_electronico"),
-            "tercero_telefono_1": vals.get("tercero_telefono_1"),
-            "total_debit": round(vals.get("total_debit"), 2) or 0,
-            "total_credit": round(vals.get("total_credit"), 2) or 0,
-            "total": round(vals.get("total"), 2) or 0
-        })
+    # Trick to determine the amount of items enumerated on the Map Key
+    the_key = ('the_account', 'the_tercero', 'the_voucher_type') if group_by_voucher_type else ('the_account', 'the_tercero')
+    for the_key, the_values in data_map.items():
+
+        data_to_append = {
+            "account": the_values.get("account"),
+            "tercero_id": the_values.get("tercero_id"),
+            "tercero_razon_social": the_values.get("tercero_razon_social"),
+            "tercero_nombre_comercial": the_values.get("tercero_nombre_comercial"),
+            "tercero_primer_apellido": the_values.get("tercero_primer_apellido"),
+            "tercero_segundo_apellido": the_values.get("tercero_segundo_apellido"),
+            "tercero_primer_nombre": the_values.get("tercero_primer_nombre"),
+            "tercero_otros_nombres": the_values.get("tercero_otros_nombres"),
+            "tercero_direccion_principal": the_values.get("tercero_direccion_principal"),
+            "tercero_ciudad_municipio": the_values.get("tercero_ciudad_municipio"),
+            "tercero_departamento": the_values.get("tercero_departamento"),
+            "tercero_pais": the_values.get("tercero_pais"),
+            "tercero_codigo_postal": the_values.get("tercero_codigo_postal"),
+            "tercero_correo_electronico": the_values.get("tercero_correo_electronico"),
+            "tercero_telefono_1": the_values.get("tercero_telefono_1"),
+            "total_debit": round(the_values.get("total_debit"), 2) or 0,
+            "total_credit": round(the_values.get("total_credit"), 2) or 0,
+            "total": round(the_values.get("total"), 2) or 0
+        }
+        if group_by_voucher_type:
+            data_to_append.update({
+                   "voucher_type": _(the_values.get("voucher_type"))
+            })
+
+        data.append(data_to_append)
 
     return columns, data
