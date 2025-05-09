@@ -45,6 +45,7 @@ def execute(filters=None):
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
     group_by_voucher_type = filters.get("group_by_voucher_type")  # boolean
+    show_voucher = filters.get("show_voucher")  # boolean
     use_int_values = filters.get("use_int_values")  # boolean
 
     # Validate filters
@@ -58,22 +59,31 @@ def execute(filters=None):
             "label": _("Account"),
             "fieldtype": "Link",
             "options":"Account",
-            "width": 200
+            "width": 200,
         },
         {
             "fieldname": "tercero_id",
             "label": _("DIAN Tercero"),
             "fieldtype": "Link",
             "options": "DIAN tercero",
-            "width": 120
+            "width": 120,
         },
     ]
-    # Optional column
+    # Optional columns
     if group_by_voucher_type:
         columns.append({
             "label": _("Voucher Type"),
             "fieldname": "voucher_type",
-            "width": 150
+            "width": 150,
+            # "hidden": 0 if group_by_voucher_type else 1,
+        })
+    if show_voucher:
+        columns.append({
+            "label": _("Voucher"),
+            "fieldname": "voucher",
+            "fieldtype": "Dynamic Link",
+            "options": "voucher_type",  # Not sure how to make this work
+            "width": 150,
         })
     # Remaining required columns
     columns += [
@@ -82,14 +92,14 @@ def execute(filters=None):
             "label": _("Total Debit"),
             "fieldtype": "Text" if use_int_values else "Currency",
             "options": None if use_int_values else "currency",
-            "width": 150
+            "width": 150,
         },
         {
             "fieldname": "total_credit",
             "label": _("Total Credit"),
             "fieldtype": "Text" if use_int_values else "Currency",
             "options": None if use_int_values else "currency",
-            "width": 150
+            "width": 150,
         },
         {
             "fieldname": "total",
@@ -102,79 +112,79 @@ def execute(filters=None):
             "fieldname": "tercero_razon_social",
             "label": _("Razón social"),
             "fieldtype": "Text",
-            "width": 180
+            "width": 180,
         },
         {
             "fieldname": "tercero_nombre_comercial",
             "label": _("Nombre comercial"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_primer_apellido",
             "label": _("Primer apellido"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_segundo_apellido",
             "label": _("Segundo apellido"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_primer_nombre",
             "label": _("Primer nombre"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_otros_nombres",
             "label": _("Otros nombres"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_direccion_principal",
             "label": _("Dirección principal"),
             "fieldtype": "Text",
-            "width": 150
+            "width": 150,
         },
         {
             "fieldname": "tercero_ciudad_municipio",
             "label": _("Ciudad/Municipio"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_departamento",
             "label": _("Departamento"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_pais",
             "label": _("País"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
         {
             "fieldname": "tercero_codigo_postal",
             "label": _("Código postal"),
             "fieldtype": "Text",
-            "width": 80
+            "width": 80,
         },
         {
             "fieldname": "tercero_correo_electronico",
             "label": _("Correo electrónico"),
             "fieldtype": "Text",
-            "width": 150
+            "width": 150,
         },
         {
             "fieldname": "tercero_telefono_1",
             "label": _("Teléfono 1"),
             "fieldtype": "Text",
-            "width": 120
+            "width": 120,
         },
     ]
 
@@ -186,7 +196,7 @@ def execute(filters=None):
 	)
 
     # We'll use a dict to aggregate the results. Its key is a tuple composed
-    # by account, tercero_id, and - optionally - voucher_type 
+    # by account, tercero_id, and - optionally - voucher_type and voucher
     data_map = {}
     for e in entries:
         # ######################################################################
@@ -224,6 +234,10 @@ def execute(filters=None):
         if group_by_voucher_type:
             group_key = (*group_key, e.voucher_type)
 
+        # Add voucher grouping
+        if show_voucher:
+            group_key = (*group_key, e.voucher_no)
+
         # ######################################################################
         # Building the Map
         # ######################################################################
@@ -255,6 +269,8 @@ def execute(filters=None):
             # Append the the optional data
             if group_by_voucher_type:
                 data_map[group_key]["voucher_type"] = e.voucher_type
+            if show_voucher:
+                data_map[group_key]["voucher"] = e.voucher_no
 
         data_map[group_key]["total_debit"] += e.debit
         data_map[group_key]["total_credit"] += e.credit
@@ -263,7 +279,14 @@ def execute(filters=None):
     # Prepare the data for the report
     data = []
     # Trick to determine the amount of items enumerated on the Map Key
-    the_key = ('the_account', 'the_tercero', 'the_voucher_type') if group_by_voucher_type else ('the_account', 'the_tercero')
+    the_key = ('the_account', 'the_tercero')
+    if group_by_voucher_type and show_voucher:
+        the_key = ('the_account', 'the_tercero', 'the_voucher_type', 'the_voucher')
+    elif group_by_voucher_type:
+        the_key = ('the_account', 'the_tercero', 'the_voucher_type')
+    elif show_voucher:
+        the_key = ('the_account', 'the_tercero', 'the_voucher')
+
     for the_key, the_values in data_map.items():
 
         # Values should be rounded and converted into ints if required
@@ -298,9 +321,14 @@ def execute(filters=None):
             "total_credit": str(total_credit),
             "total": str(total),
         }
+        # Append optional data
         if group_by_voucher_type:
             data_to_append.update({
                    "voucher_type": _(the_values.get("voucher_type"))
+            })
+        if show_voucher:
+            data_to_append.update({
+                   "voucher": the_values.get("voucher")
             })
 
         data.append(data_to_append)
