@@ -1,9 +1,9 @@
 app_name = "va_app"
 app_title = "VA"
 app_publisher = "VIDAL & ASTUDILLO Ltda"
-app_description = "Application with extra functionality for ERPNext"
+app_description = "VIDAL & ASTUDILLO application with extra functionality for ERPNext"
 app_email = "desk@vidalastudillo.com"
-app_license = "unlicense"
+app_license = "private"
 
 # Apps
 # ------------------

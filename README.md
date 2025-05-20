@@ -1,7 +1,7 @@
 ## VA
 
-Application with extra functionality for ERPNext
+VIDAL & ASTUDILLO application with extra functionality for ERPNext
 
 #### License
 
-unlicense
+private
