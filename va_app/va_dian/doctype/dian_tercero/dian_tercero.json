@@ -1,0 +1,257 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:nit",
+ "creation": "2024-12-22 14:26:15.124199",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identificacion_section",
+  "nit",
+  "razon_social",
+  "nombre_comercial",
+  "tipo_de_contribuyente",
+  "tipo_de_documento",
+  "numero_de_identificacion",
+  "column_break_hwox",
+  "div",
+  "primer_apellido",
+  "segundo_apellido",
+  "primer_nombre",
+  "otros_nombres",
+  "sigla",
+  "section_break_pviw",
+  "nombre_completo",
+  "column_break_yucj",
+  "rut",
+  "contacto_section",
+  "direccion_principal",
+  "correo_electronico",
+  "telefono_1",
+  "telefono_2",
+  "column_break_hhzf",
+  "ciudad_municipio",
+  "departamento",
+  "codigo_postal",
+  "pais"
+ ],
+ "fields": [
+  {
+   "description": "N\u00famero de Indentificaci\u00f3n Tributaria",
+   "fieldname": "nit",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "NIT",
+   "non_negative": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "D\u00edgito de verificaci\u00f3n",
+   "fieldname": "div",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "DIV",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "razon_social",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "label": "Raz\u00f3n social",
+   "unique": 1
+  },
+  {
+   "fieldname": "primer_apellido",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "label": "Primer apellido"
+  },
+  {
+   "fieldname": "segundo_apellido",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "label": "Segundo apellido"
+  },
+  {
+   "fieldname": "primer_nombre",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "label": "Primer nombre"
+  },
+  {
+   "fieldname": "otros_nombres",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "label": "Otros nombres"
+  },
+  {
+   "fieldname": "nombre_completo",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Nombre completo",
+   "reqd": 1
+  },
+  {
+   "description": "Archivo RUT",
+   "fieldname": "rut",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "RUT"
+  },
+  {
+   "fieldname": "nombre_comercial",
+   "fieldtype": "Data",
+   "label": "Nombre comercial"
+  },
+  {
+   "fieldname": "tipo_de_contribuyente",
+   "fieldtype": "Data",
+   "label": "Tipo de contribuyente"
+  },
+  {
+   "fieldname": "tipo_de_documento",
+   "fieldtype": "Data",
+   "label": "Tipo de documento"
+  },
+  {
+   "fieldname": "column_break_hwox",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_pviw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_yucj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_hhzf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ciudad_municipio",
+   "fieldtype": "Data",
+   "label": "Ciudad Municipio"
+  },
+  {
+   "fieldname": "departamento",
+   "fieldtype": "Data",
+   "label": "Departamento"
+  },
+  {
+   "fieldname": "numero_de_identificacion",
+   "fieldtype": "Data",
+   "label": "N\u00famero de identificaci\u00f3n"
+  },
+  {
+   "fieldname": "direccion_principal",
+   "fieldtype": "Data",
+   "label": "Direcci\u00f3n principal"
+  },
+  {
+   "fieldname": "correo_electronico",
+   "fieldtype": "Data",
+   "label": "Correo electr\u00f3nico"
+  },
+  {
+   "fieldname": "telefono_1",
+   "fieldtype": "Data",
+   "label": "Tel\u00e9fono 1"
+  },
+  {
+   "fieldname": "telefono_2",
+   "fieldtype": "Data",
+   "label": "Tel\u00e9fono 2"
+  },
+  {
+   "fieldname": "codigo_postal",
+   "fieldtype": "Data",
+   "label": "C\u00f3digo Postal"
+  },
+  {
+   "fieldname": "pais",
+   "fieldtype": "Data",
+   "label": "Pa\u00eds"
+  },
+  {
+   "fieldname": "contacto_section",
+   "fieldtype": "Section Break",
+   "label": "Contacto"
+  },
+  {
+   "fieldname": "identificacion_section",
+   "fieldtype": "Section Break",
+   "label": "Identificaci\u00f3n"
+  },
+  {
+   "fieldname": "sigla",
+   "fieldtype": "Data",
+   "label": "Sigla"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Terceros",
+   "link_doctype": "Shareholder",
+   "link_fieldname": "custom_dian_tercero"
+  },
+  {
+   "group": "Terceros",
+   "link_doctype": "Employee",
+   "link_fieldname": "custom_dian_tercero"
+  },
+  {
+   "group": "Terceros",
+   "link_doctype": "Customer",
+   "link_fieldname": "custom_dian_tercero"
+  },
+  {
+   "group": "Terceros",
+   "link_doctype": "Supplier",
+   "link_fieldname": "custom_dian_tercero"
+  },
+  {
+   "group": "Documentos DIAN directos",
+   "link_doctype": "Journal Entry",
+   "link_fieldname": "custom_dian_tercero"
+  }
+ ],
+ "modified": "2025-05-07 21:54:35.505181",
+ "modified_by": "Administrator",
+ "module": "VA DIAN",
+ "name": "DIAN tercero",
+ "naming_rule": "By fieldname",
+ "owner": "jm@vidalastudillo.com",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_preview_popup": 1,
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "nombre_completo"
+}
