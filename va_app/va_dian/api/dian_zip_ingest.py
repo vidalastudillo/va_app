@@ -1,7 +1,7 @@
 """ ----------------------------------------------------------------------------
-Copyright (c) 2026, VIDAL & ASTUDILLO Ltda and contributors
+Copyright (c) 2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
-By JMVA, VIDAL & ASTUDILLO Ltda
+By JMVA, VIDAL & ASTUDILLO Ltda.
 Version 2026-02-15
 
 --------------------------------------------------------------------------------
@@ -20,8 +20,6 @@ from pathlib import Path
 import frappe
 from frappe.utils.file_manager import save_file
 
-from .hashing import compute_xml_hash   # or inline helper
-
 
 @frappe.whitelist()
 def ingest_dian_zip(
@@ -39,7 +37,7 @@ def ingest_dian_zip(
         frappe.throw("file_url is required")
 
     # ------------------------------------------------------------------
-    # Locate uploaded ZIP file
+    # Locate uploaded ZIP file.
     # ------------------------------------------------------------------
     file_doc = frappe.get_doc("File", {"file_url": file_url})
     zip_path = file_doc.get_full_path()
@@ -48,7 +46,7 @@ def ingest_dian_zip(
         frappe.throw("Provided file is not a valid ZIP file")
 
     # ------------------------------------------------------------------
-    # Prepare temp workspace
+    # Prepare temp workspace.
     # ------------------------------------------------------------------
     tmp_dir = tempfile.mkdtemp(prefix="dian_zip_")
 
@@ -59,22 +57,13 @@ def ingest_dian_zip(
         xml_path, pdf_path = _find_xml_and_pdf(tmp_dir)
 
         # ------------------------------------------------------------------
-        # Duplicate detection
-        # ------------------------------------------------------------------
-        xml_hash = compute_xml_hash(xml_path)
-
-        if frappe.db.exists("DIAN document", {"xml_hash": xml_hash}):
-            frappe.throw("This DIAN XML has already been ingested")
-
-        # ------------------------------------------------------------------
-        # Create DIAN document
+        # Create DIAN document.
         # ------------------------------------------------------------------
         dian_doc = frappe.new_doc("DIAN document")
-        dian_doc.xml_hash = xml_hash
         dian_doc.insert(ignore_permissions=True)
 
         # ------------------------------------------------------------------
-        # Attach XML
+        # Attach XML.
         # ------------------------------------------------------------------
         with open(xml_path, "rb") as f:
             save_file(
@@ -87,7 +76,7 @@ def ingest_dian_zip(
             )
 
         # ------------------------------------------------------------------
-        # Attach PDF
+        # Attach PDF.
         # ------------------------------------------------------------------
         with open(pdf_path, "rb") as f:
             save_file(
@@ -99,10 +88,8 @@ def ingest_dian_zip(
                 is_private=1,
             )
 
-        dian_doc.save(ignore_permissions=True)
-
         # ------------------------------------------------------------------
-        # SINGLE SOURCE OF TRUTH: XML extraction
+        # XML enrichment.
         # ------------------------------------------------------------------
         from va_app.va_dian.api.dian_document_utils import update_doc_with_xml_info
         update_doc_with_xml_info(dian_doc.name)
@@ -111,3 +98,25 @@ def ingest_dian_zip(
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+# -------------------------------------------------------------------
+
+def _find_xml_and_pdf(base_dir: str) -> tuple[str, str]:
+    xml = pdf = None
+
+    for root, _, files in os.walk(base_dir):
+        for f in files:
+            lf = f.lower()
+            full = os.path.join(root, f)
+            if lf.endswith(".xml") and not xml:
+                xml = full
+            elif lf.endswith(".pdf") and not pdf:
+                pdf = full
+
+    if not xml:
+        frappe.throw("ZIP does not contain an XML file")
+    if not pdf:
+        frappe.throw("ZIP does not contain a PDF file")
+
+    return xml, pdf
