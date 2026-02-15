@@ -1,7 +1,7 @@
 """ ----------------------------------------------------------------------------
-Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors
+Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
-By JMVA, VIDAL & ASTUDILLO Ltda
+By JMVA, VIDAL & ASTUDILLO Ltda.
 Version 2026-02-15
 ---------------------------------------------------------------------------- """
 
@@ -16,9 +16,29 @@ from frappe.utils import getdate
 
 class DIANdocument(Document):
 
+	def before_save(self):
+		"""
+		Enforce CUFE uniqueness once it exists.
+		"""
+		if self.cufe:
+			existing = frappe.db.exists(
+				"DIAN document",
+				{
+					"cufe": self.cufe,
+					"name": ["!=", self.name],
+				},
+			)
+			if existing:
+				self.status = "Duplicate"
+				frappe.throw(
+					f"DIAN document with CUFE {self.cufe} already exists: {existing}"
+				)
+
+    # ------------------------------------------------------------------
+
 	def after_insert(self):
 		"""
-		Finalize processing after the document is created and enriched.
+		Finalize processing after XML enrichment.
 		"""
 		try:
 			if self.xml and self.representation and self.xml_content:
@@ -33,6 +53,9 @@ class DIANdocument(Document):
     # ------------------------------------------------------------------
 
 	def _rename_attachments(self):
+		"""
+		Renames XML and PDF using extracted party and issue date.
+		"""
 		party = self.xml_dian_tercero or "Desconocido"
 		issue_date = self._extract_issue_date_from_xml_content()
 		date_prefix = getdate(issue_date).strftime("%y-%m-%d")
@@ -53,7 +76,8 @@ class DIANdocument(Document):
 
 	def _extract_issue_date_from_xml_content(self) -> str:
 		"""
-		Relies on update_doc_with_xml_info being the single XML parser.
+		Relies on the result of `update_doc_with_xml_info` which
+		produces the content for the field `xml_content`.
 		"""
 		match = re.search(
 			r"<cbc:IssueDate>(.*?)</cbc:IssueDate>",
