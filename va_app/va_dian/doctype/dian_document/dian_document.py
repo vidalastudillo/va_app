@@ -20,6 +20,7 @@ class DIANdocument(Document):
 		"""
 		Enforce CUFE uniqueness once it exists.
 		"""
+		# frappe.msgprint("DIANdocument before_save controller is running")
 		if self.cufe:
 			existing = frappe.db.exists(
 				"DIAN document",
@@ -34,23 +35,40 @@ class DIANdocument(Document):
 					f"DIAN document with CUFE {self.cufe} already exists: {existing}"
 				)
 
-    # ------------------------------------------------------------------
+	# ------------------------------------------------------------------
 
 	def after_insert(self):
 		"""
-		Finalize processing after XML enrichment.
+		Initial state after creation.
 		"""
+		# frappe.msgprint("DIANdocument after_insert controller is running")
+		if not self.status:
+			self.status = "Draft"
+
+	# ------------------------------------------------------------------
+
+	def on_update(self):
+		"""
+		Finalize processing once XML enrichment is complete.
+		This runs AFTER `update_doc_with_xml_info`.
+		"""
+		# frappe.msgprint("DIANdocument on_update controller is running")
+		if self.status == "Processed":
+			return
+
+		if not (self.xml and self.representation and self.xml_content):
+			return
+
 		try:
-			if self.xml and self.representation and self.xml_content:
-				self._rename_attachments()
-				self.status = "Processed"
-				self.save(ignore_permissions=True)
+			self._rename_attachments()
+			self.status = "Processed"
+			self.db_update()
 		except Exception:
 			self.status = "Error"
-			self.save(ignore_permissions=True)
+			self.db_update()
 			raise
 
-    # ------------------------------------------------------------------
+	# ------------------------------------------------------------------
 
 	def _rename_attachments(self):
 		"""
@@ -69,10 +87,11 @@ class DIANdocument(Document):
 				f"{self._sanitize(original.stem)}{original.suffix}"
 			)
 
-			file_doc.file_name = new_name
-			file_doc.save(ignore_permissions=True)
+			if file_doc.file_name != new_name:
+				file_doc.file_name = new_name
+				file_doc.save(ignore_permissions=True)
 
-    # ------------------------------------------------------------------
+	# ------------------------------------------------------------------
 
 	def _extract_issue_date_from_xml_content(self) -> str:
 		"""
@@ -87,7 +106,7 @@ class DIANdocument(Document):
 			frappe.throw("IssueDate not found in extracted XML content")
 		return match.group(1)
 
-    # ------------------------------------------------------------------
+	# ------------------------------------------------------------------
 
 	@staticmethod
 	def _sanitize(name: str) -> str:
