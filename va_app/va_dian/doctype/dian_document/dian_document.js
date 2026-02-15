@@ -1,8 +1,8 @@
 /* -----------------------------------------------------------------------------
 
-Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors
+Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
-By JMVA, VIDAL & ASTUDILLO Ltda
+By JMVA, VIDAL & ASTUDILLO Ltda.
 Version 2026-02-15
 
 --------------------------------------------------------------------------------
