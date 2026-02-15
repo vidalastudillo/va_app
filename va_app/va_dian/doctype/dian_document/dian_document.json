@@ -83,15 +83,16 @@
       "label": "Estado",
       "options": "Draft\nProcessed\nDuplicate\nError",
       "default": "Draft",
-      "in_list_view": 1,
-      "read_only": 1
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
-      "fieldname": "xml_hash",
+      "fieldname": "cufe",
       "fieldtype": "Data",
-      "label": "XML Hash",
+      "label": "CUFE",
       "read_only": 1,
-      "unique": 1
+      "unique": 1,
+      "in_list_view": 1
     }
   ],
   "grid_page_length": 50,
@@ -101,6 +102,7 @@
   "modified_by": "Administrator",
   "module": "VA DIAN",
   "name": "DIAN document",
+  "title_field": "cufe",
   "owner": "jm@vidalastudillo.com",
   "permissions": [
     {
