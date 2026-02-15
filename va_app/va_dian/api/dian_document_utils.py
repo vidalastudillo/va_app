@@ -322,8 +322,12 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     # Persist extracted information
     # ------------------------------------------------------------------
     doc.set(
-        "cufe",
+        "xml_cufe",
         xml_result.uuid,
+    )
+    doc.set(
+        "xml_issue_date",
+        xml_result.issue_date,
     )
     doc.set(
         "xml_dian_tercero",
@@ -334,6 +338,7 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     )
 
     doc.save(ignore_permissions=True)
+    frappe.db.commit()
     return doc.as_dict()
 
 

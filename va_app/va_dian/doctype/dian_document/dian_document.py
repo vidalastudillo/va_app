@@ -56,7 +56,14 @@ class DIANdocument(Document):
 		if self.status == "Processed":
 			return
 
-		if not (self.xml and self.representation and self.xml_content):
+		if not (
+			self.xml and \
+			self.representation and \
+			# self.xml_cufe and \
+			# self.xml_issue_date and \
+			# self.xml_dian_tercero and \
+			self.xml_content
+		):
 			return
 
 		try:
@@ -74,8 +81,15 @@ class DIANdocument(Document):
 		"""
 		Renames XML and PDF using extracted party and issue date.
 		"""
-		party = self.xml_dian_tercero or "Desconocido"
-		issue_date = self._extract_issue_date_from_xml_content()
+
+		if not self.xml_dian_tercero:
+			frappe.throw("Tercero DIAN no determinado; No es posible renombrar los archivos adjuntos")
+
+		if not self.xml_issue_date:
+			frappe.throw("Fecha de emisión no determinada; No es posible renombrar los archivos adjuntos")
+
+		party = self.xml_dian_tercero
+		issue_date = self.xml_issue_date
 		date_prefix = getdate(issue_date).strftime("%y-%m-%d")
 
 		for field in ("xml", "representation"):
@@ -90,21 +104,6 @@ class DIANdocument(Document):
 			if file_doc.file_name != new_name:
 				file_doc.file_name = new_name
 				file_doc.save(ignore_permissions=True)
-
-	# ------------------------------------------------------------------
-
-	def _extract_issue_date_from_xml_content(self) -> str:
-		"""
-		Relies on the result of `update_doc_with_xml_info` which
-		produces the content for the field `xml_content`.
-		"""
-		match = re.search(
-			r"<cbc:IssueDate>(.*?)</cbc:IssueDate>",
-			self.xml_content or "",
-		)
-		if not match:
-			frappe.throw("IssueDate not found in extracted XML content")
-		return match.group(1)
 
 	# ------------------------------------------------------------------
 
