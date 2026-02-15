@@ -66,27 +66,30 @@ def ingest_dian_zip(
         # Attach XML.
         # ------------------------------------------------------------------
         with open(xml_path, "rb") as f:
-            save_file(
+            xml_file = save_file(
                 fname=Path(xml_path).name,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
-                fieldname="xml",
                 is_private=1,
             )
+            dian_doc.xml = xml_file.file_url
 
         # ------------------------------------------------------------------
         # Attach PDF.
         # ------------------------------------------------------------------
         with open(pdf_path, "rb") as f:
-            save_file(
+            pdf_file = save_file(
                 fname=Path(pdf_path).name,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
-                fieldname="representation",
                 is_private=1,
             )
+            dian_doc.representation = pdf_file.file_url
+
+        # Persist field bindings
+        dian_doc.save(ignore_permissions=True)
 
         # ------------------------------------------------------------------
         # XML enrichment.
