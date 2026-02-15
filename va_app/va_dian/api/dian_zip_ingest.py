@@ -16,14 +16,10 @@ import zipfile
 import tempfile
 import shutil
 from pathlib import Path
-from datetime import datetime
 
 import frappe
 from frappe.utils.file_manager import save_file
-
-from va_app.va_dian.api.dian_document_utils import aux_extract_xml_info
-from va_app.va_dian.api.dian_document_utils import aux_get_text
-import xml.etree.ElementTree as ET
+from frappe.utils import getdate
 
 
 @frappe.whitelist()
@@ -59,50 +55,11 @@ def ingest_dian_zip(
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(tmp_dir)
 
-        # ------------------------------------------------------------------
-        # Locate XML and PDF
-        # ------------------------------------------------------------------
-        xml_file = None
-        pdf_file = None
+        xml_path, pdf_path = _find_xml_and_pdf(tmp_dir)
 
-        for root, _, files in os.walk(tmp_dir):
-            for f in files:
-                lf = f.lower()
-                full_path = os.path.join(root, f)
-                if lf.endswith(".xml") and xml_file is None:
-                    xml_file = full_path
-                elif lf.endswith(".pdf") and pdf_file is None:
-                    pdf_file = full_path
-
-        if not xml_file:
-            frappe.throw("No XML file found in ZIP")
-        if not pdf_file:
-            frappe.throw("No PDF file found in ZIP")
-
-        # ------------------------------------------------------------------
-        # Extract party name & issue date directly from XML
-        # (lightweight parse, before DIAN document exists)
-        # ------------------------------------------------------------------
-        party_name, issue_date = _extract_basic_xml_info(xml_file)
-
-        if not party_name or not issue_date:
-            frappe.throw("Unable to extract party name or issue date from XML")
-
-        date_obj = datetime.strptime(issue_date, "%Y-%m-%d")
-        date_prefix = date_obj.strftime("%y-%m-%d")
-
-        # ------------------------------------------------------------------
-        # Build renamed filenames
-        # ------------------------------------------------------------------
-        xml_original = Path(xml_file).name
-        pdf_original = Path(pdf_file).name
-
-        base_xml_name = _sanitize_filename(xml_original)
-        base_pdf_name = _sanitize_filename(pdf_original)
-
-        new_xml_name = f"{date_prefix} {party_name} - {base_xml_name}"
-        new_pdf_name = f"{date_prefix} {party_name} - {base_pdf_name}"
-
+        # ------------------------------------------------------------
+        # Create DIAN document (empty)
+        # ------------------------------------------------------------
         # ------------------------------------------------------------------
         # Create DIAN document
         # ------------------------------------------------------------------
@@ -112,9 +69,9 @@ def ingest_dian_zip(
         # ------------------------------------------------------------------
         # Attach XML
         # ------------------------------------------------------------------
-        with open(xml_file, "rb") as f:
+        with open(xml_path, "rb") as f:
             xml_attach = save_file(
-                fname=new_xml_name,
+                fname=Path(xml_path).name,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
@@ -125,9 +82,9 @@ def ingest_dian_zip(
         # ------------------------------------------------------------------
         # Attach PDF
         # ------------------------------------------------------------------
-        with open(pdf_file, "rb") as f:
+        with open(pdf_path, "rb") as f:
             pdf_attach = save_file(
-                fname=new_pdf_name,
+                fname=Path(pdf_path).name,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
@@ -138,50 +95,90 @@ def ingest_dian_zip(
         dian_doc.save(ignore_permissions=True)
         frappe.db.commit()
 
-        # ------------------------------------------------------------------
-        # Reuse your existing logic to extract & enrich data
-        # ------------------------------------------------------------------
+        # ------------------------------------------------------------
+        # SINGLE SOURCE OF TRUTH: extract XML info
+        # ------------------------------------------------------------
         from va_app.va_dian.api.dian_document_utils import update_doc_with_xml_info
         update_doc_with_xml_info(dian_doc.name)
 
+        # Reload with extracted values
+        dian_doc.reload()
+
+        # ------------------------------------------------------------
+        # Rename attached files using extracted data
+        # ------------------------------------------------------------
+        _rename_attachments(dian_doc)
+
+        frappe.db.commit()
         return dian_doc.name
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
-# ----------------------------------------------------------------------
+# -------------------------------------------------------------------
 # Helpers
-# ----------------------------------------------------------------------
+# -------------------------------------------------------------------
 
-def _extract_basic_xml_info(xml_path: str) -> tuple[str | None, str | None]:
+def _find_xml_and_pdf(base_dir: str) -> tuple[str, str]:
+    xml = pdf = None
+    for root, _, files in os.walk(base_dir):
+        for f in files:
+            lf = f.lower()
+            full = os.path.join(root, f)
+            if lf.endswith(".xml") and not xml:
+                xml = full
+            elif lf.endswith(".pdf") and not pdf:
+                pdf = full
+
+    if not xml:
+        frappe.throw("ZIP does not contain an XML file")
+    if not pdf:
+        frappe.throw("ZIP does not contain a PDF file")
+
+    return xml, pdf
+
+
+def _rename_attachments(doc):
     """
-    Extracts:
-    - Sender party name
-    - Issue date
-    Without requiring a DIAN document record.
+    Renames XML and PDF based on extracted party + date.
     """
 
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
+    if not doc.xml or not doc.representation:
+        return
 
-    ns = {
-        'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
-        'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-    }
+    party = doc.xml_dian_tercero or "Desconocido"
 
-    party_elem = root.find(
-        'cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName', ns
-    )
-    date_elem = root.find('cbc:IssueDate', ns)
+    # Issue date should already be parsed into xml_content by your utils
+    issue_date = _extract_issue_date_from_xml_content(doc.xml_content)
+    date_prefix = getdate(issue_date).strftime("%y-%m-%d")
 
-    party_name = aux_get_text(party_elem)
-    issue_date = aux_get_text(date_elem)
+    for field in ("xml", "representation"):
+        file_doc = frappe.get_doc("File", {"file_url": getattr(doc, field)})
+        original = Path(file_doc.file_name)
 
-    return party_name, issue_date
+        new_name = (
+            f"{date_prefix} {party} - "
+            f"{_sanitize(original.stem)}{original.suffix}"
+        )
+
+        file_doc.file_name = new_name
+        file_doc.save(ignore_permissions=True)
 
 
-def _sanitize_filename(name: str) -> str:
+def _extract_issue_date_from_xml_content(xml_text: str) -> str:
+    """
+    Minimal, safe extraction — relies on update_doc_with_xml_info
+    having already populated xml_content.
+    """
+    import re
+    match = re.search(r"<cbc:IssueDate>(.*?)</cbc:IssueDate>", xml_text)
+    if not match:
+        frappe.throw("IssueDate not found in extracted XML content")
+    return match.group(1)
+
+
+def _sanitize(name: str) -> str:
     """
     Removes unsafe characters but preserves most of the original filename.
     """
