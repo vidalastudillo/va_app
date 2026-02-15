@@ -30,3 +30,18 @@ class TestDIANZipIngest(FrappeTestCase):
         self.assertTrue(doc.representation)
         self.assertTrue(doc.xml_content)
         self.assertTrue(doc.xml_dian_tercero)
+
+    def test_duplicate_zip_is_rejected(self):
+        file_doc = frappe.get_doc({
+            "doctype": "File",
+            "file_name": "sample_dian.zip",
+            "content": open(self.test_zip, "rb").read(),
+            "is_private": 1,
+        }).insert()
+
+        from va_app.va_dian.api.dian_zip_ingest import ingest_dian_zip
+
+        ingest_dian_zip(file_doc.file_url)
+
+        with self.assertRaises(frappe.ValidationError):
+            ingest_dian_zip(file_doc.file_url)
