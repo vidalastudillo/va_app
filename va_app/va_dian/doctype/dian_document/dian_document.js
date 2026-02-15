@@ -1,17 +1,17 @@
 /* -----------------------------------------------------------------------------
 
-Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
+Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-04
+Version 2026-02-15
 
 --------------------------------------------------------------------------------
 Propósitos:
 --------------------------------------------------------------------------------
 
-- Extraer la información que contienen los archivos .XML de los documentos
-  electrónicos de la DIAN.
-- Permitir la generación de documentos ERPNext usando la información extraída.
+- Ingerir en ERPNext los documentos electrónicos de la DIAN mediante la
+  información manual proporcionada por el usuario, o automáticamente de un
+  archivo ZIP que contenga los documentos XML/PDF.
 
 --------------------------------------------------------------------------------
 Implementación:
@@ -75,6 +75,26 @@ frappe.ui.form.on("DIAN document", {
             frappe.msgprint(__("Document should have been updated: ") + r.message);
           }
         }
+      });
+    });
+
+    frm.add_custom_button("Importar ZIP DIAN", () => {
+      new frappe.ui.FileUploader({
+        allow_multiple: false,
+        restrictions: { allowed_file_types: [".zip"] },
+        on_success(file) {
+          frappe.call({
+            method: "va_app.va_dian.api.dian_zip_ingest.ingest_dian_zip",
+            args: { file_url: file.file_url },
+            freeze: true,
+            callback(r) {
+              frappe.msgprint(
+                __("Documento DIAN creado: {0}", [r.message])
+              );
+              frappe.set_route("Form", "DIAN document", r.message);
+            },
+          });
+        },
       });
     });
   }
