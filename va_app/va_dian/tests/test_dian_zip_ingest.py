@@ -1,3 +1,11 @@
+""" ----------------------------------------------------------------------------
+Copyright (c) 2026, VIDAL & ASTUDILLO Ltda and contributors.
+For license information, please see license.txt
+By JMVA, VIDAL & ASTUDILLO Ltda.
+Version 2026-02-15
+---------------------------------------------------------------------------- """
+
+
 import frappe
 import os
 
@@ -13,7 +21,7 @@ class TestDIANZipIngest(FrappeTestCase):
             "sample_dian.zip",
         )
 
-    def test_zip_ingestion_creates_document(self):
+    def test_ingestion_creates_processed_document(self):
         file_doc = frappe.get_doc({
             "doctype": "File",
             "file_name": "sample_dian.zip",
@@ -26,12 +34,14 @@ class TestDIANZipIngest(FrappeTestCase):
 
         doc = frappe.get_doc("DIAN document", name)
 
+        self.assertEqual(doc.status, "Processed")
+        self.assertTrue(doc.cufe)
         self.assertTrue(doc.xml)
         self.assertTrue(doc.representation)
         self.assertTrue(doc.xml_content)
         self.assertTrue(doc.xml_dian_tercero)
 
-    def test_duplicate_zip_is_rejected(self):
+    def test_duplicate_cufe_is_rejected(self):
         file_doc = frappe.get_doc({
             "doctype": "File",
             "file_name": "sample_dian.zip",
