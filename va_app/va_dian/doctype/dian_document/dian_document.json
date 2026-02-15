@@ -1,102 +1,123 @@
 {
- "actions": [],
- "allow_import": 1,
- "allow_rename": 1,
- "creation": "2024-12-08 10:36:46.994362",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "soportes_section",
-  "xml",
-  "representation",
-  "relaci\u00f3n_de_documentos_section",
-  "related_document_type",
-  "related_document",
-  "contenido_extra\u00eddo_section",
-  "xml_content",
-  "xml_dian_tercero"
- ],
- "fields": [
-  {
-   "fieldname": "soportes_section",
-   "fieldtype": "Section Break",
-   "label": "Soportes"
-  },
-  {
-   "description": "Archivo XML",
-   "fieldname": "xml",
-   "fieldtype": "Attach",
-   "label": "XML"
-  },
-  {
-   "description": "Representaci\u00f3n gr\u00e1fica del documento",
-   "fieldname": "representation",
-   "fieldtype": "Attach",
-   "label": "Representaci\u00f3n"
-  },
-  {
-   "fieldname": "relaci\u00f3n_de_documentos_section",
-   "fieldtype": "Section Break",
-   "label": "Relaci\u00f3n de documentos"
-  },
-  {
-   "description": "Tipo de documento ERPNext asociado a este Documento DIAN",
-   "fieldname": "related_document_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Tipo de documento",
-   "options": "DocType"
-  },
-  {
-   "description": "Documento ERPNext asociado a este Documento DIAN",
-   "fieldname": "related_document",
-   "fieldtype": "Dynamic Link",
-   "in_list_view": 1,
-   "label": "Documento",
-   "options": "related_document_type"
-  },
-  {
-   "fieldname": "contenido_extra\u00eddo_section",
-   "fieldtype": "Section Break",
-   "label": "Contenido extra\u00eddo"
-  },
-  {
-   "fieldname": "xml_content",
-   "fieldtype": "Long Text",
-   "label": "Contenido XML"
-  },
-  {
-   "fieldname": "xml_dian_tercero",
-   "fieldtype": "Link",
-   "label": "DIAN tercero",
-   "options": "DIAN tercero"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2025-05-07 21:53:48.416628",
- "modified_by": "Administrator",
- "module": "VA DIAN",
- "name": "DIAN document",
- "owner": "jm@vidalastudillo.com",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+  "actions": [],
+  "allow_import": 1,
+  "allow_rename": 1,
+  "creation": "2024-12-08 10:36:46.994362",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "soportes_section",
+    "xml",
+    "representation",
+    "relaci\u00f3n_de_documentos_section",
+    "related_document_type",
+    "related_document",
+    "contenido_extra\u00eddo_section",
+    "xml_content",
+    "xml_dian_tercero"
+  ],
+  "fields": [
+    {
+      "fieldname": "soportes_section",
+      "fieldtype": "Section Break",
+      "label": "Soportes"
+    },
+    {
+      "description": "Archivo XML",
+      "fieldname": "xml",
+      "fieldtype": "Attach",
+      "label": "XML"
+    },
+    {
+      "description": "Representaci\u00f3n gr\u00e1fica del documento",
+      "fieldname": "representation",
+      "fieldtype": "Attach",
+      "label": "Representaci\u00f3n"
+    },
+    {
+      "fieldname": "relaci\u00f3n_de_documentos_section",
+      "fieldtype": "Section Break",
+      "label": "Relaci\u00f3n de documentos"
+    },
+    {
+      "description": "Tipo de documento ERPNext asociado a este Documento DIAN",
+      "fieldname": "related_document_type",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "label": "Tipo de documento",
+      "options": "DocType"
+    },
+    {
+      "description": "Documento ERPNext asociado a este Documento DIAN",
+      "fieldname": "related_document",
+      "fieldtype": "Dynamic Link",
+      "in_list_view": 1,
+      "label": "Documento",
+      "options": "related_document_type"
+    },
+    {
+      "fieldname": "contenido_extra\u00eddo_section",
+      "fieldtype": "Section Break",
+      "label": "Contenido extra\u00eddo"
+    },
+    {
+      "fieldname": "xml_content",
+      "fieldtype": "Long Text",
+      "label": "Contenido XML"
+    },
+    {
+      "fieldname": "xml_dian_tercero",
+      "fieldtype": "Link",
+      "label": "DIAN tercero",
+      "options": "DIAN tercero"
+    },
+    {
+      "fieldname": "processing_section",
+      "fieldtype": "Section Break",
+      "label": "Procesamiento"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Estado",
+      "options": "Draft\nProcessed\nDuplicate\nError",
+      "default": "Draft",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "xml_hash",
+      "fieldtype": "Data",
+      "label": "XML Hash",
+      "read_only": 1,
+      "unique": 1
+    }
+  ],
+  "grid_page_length": 50,
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2025-05-07 21:53:48.416628",
+  "modified_by": "Administrator",
+  "module": "VA DIAN",
+  "name": "DIAN document",
+  "owner": "jm@vidalastudillo.com",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "row_format": "Dynamic",
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
 }
