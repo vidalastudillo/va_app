@@ -20,9 +20,6 @@ from va_app.va_dian.api.dian_data_models import (
 from va_app.va_dian.api.dian_tercero_utils import (
     upsert_dian_tercero,
 )
-from va_app.va_dian.api.utils import (
-    provide_nicely_formatted_dictionary,
-)
 
 
 def aux_get_text(
@@ -85,14 +82,12 @@ def _aux_extract_xml_info_from_dian_document(
 
     frappe.msgprint("Found XML file: {}".format(file_doc))
 
-    # return get_object_from_xml_file(file_doc.get_full_path())
-    return get_object_from_xml_file(
+    return _get_dian_document_object_from_xml_file(
         xml_file_path=file_doc,
     )
 
 
-# @frappe.whitelist()
-def get_object_from_xml_file(
+def _get_dian_document_object_from_xml_file(
     xml_file_path: str | None,
 ) -> VA_DIAN_Document | None:
     """
@@ -299,28 +294,28 @@ def get_object_from_xml_file(
     except ET.ParseError:
         pass
 
-        # Before procedding, we try to determine the UUID if not yet identified
-        if document_uuid is None:
-            document_uuid = aux_get_text(root.find('cac:ParentDocumentLineReference/cac:DocumentReference/cbc:UUID', document_namespace))
+    # Before procedding, we try to determine the UUID if not yet identified
+    if document_uuid is None:
+        document_uuid = aux_get_text(root.find('cac:ParentDocumentLineReference/cac:DocumentReference/cbc:UUID', document_namespace))
 
-        # Build object
-        to_return = VA_DIAN_Document(
-            document_type = document_type,
-            document_id = aux_get_text(reg_document_id),
-            uuid = document_uuid,
-            issue_date = aux_get_text(reg_issue_date),
-            issue_time = aux_get_text(reg_issue_time),
-            sender_party_name = aux_get_text(reg_sender_party_name),
-            sender_party_id = aux_get_text(reg_sender_party_id),
-            sender_address = document_sender_address,
-            sender_email=aux_get_text(reg_sender_email_elem),
-            sender_telephone=aux_get_text(reg_sender_telephone_elem),
-            receiver_party_name = aux_get_text(reg_receiver_party_name),
-            receiver_party_id = aux_get_text(reg_receiver_party_id),
-            items=document_items,
-        )
+    # Build object
+    to_return = VA_DIAN_Document(
+        document_type = document_type,
+        document_id = aux_get_text(reg_document_id),
+        uuid = document_uuid,
+        issue_date = aux_get_text(reg_issue_date),
+        issue_time = aux_get_text(reg_issue_time),
+        sender_party_name = aux_get_text(reg_sender_party_name),
+        sender_party_id = aux_get_text(reg_sender_party_id),
+        sender_address = document_sender_address,
+        sender_email=aux_get_text(reg_sender_email_elem),
+        sender_telephone=aux_get_text(reg_sender_telephone_elem),
+        receiver_party_name = aux_get_text(reg_receiver_party_name),
+        receiver_party_id = aux_get_text(reg_receiver_party_id),
+        items=document_items,
+    )
 
-        return to_return
+    return to_return
 
 
 @frappe.whitelist()
@@ -348,9 +343,6 @@ def update_doc_with_xml_info(
         frappe.throw(f"DIAN Document {docname} has not valid XML information on it.")
         return None
 
-    _nicely_formatted_xml_content = provide_nicely_formatted_dictionary(xml_result.dict())
-    frappe.msgprint(f"DIAN Document {docname} has this XML content: {_nicely_formatted_xml_content}")
-
     # Obtain CUFE / UUID from XML.
     if xml_result.uuid is None:
         frappe.throw("XML does not contain a valid CUFE / UUID")
@@ -373,7 +365,7 @@ def update_doc_with_xml_info(
     )
     doc.set(
         "xml_content",
-        _nicely_formatted_xml_content,
+        xml_result.as_beauty_text(),
     )
 
     doc.save(ignore_permissions=True)
