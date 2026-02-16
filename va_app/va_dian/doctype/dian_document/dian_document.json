@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "DIAN-DOC-.YYYY.-.#####",
  "creation": "2024-12-08 10:36:46.994362",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -14,6 +15,8 @@
   "related_document",
   "contenido_extra\u00eddo_section",
   "xml_content",
+  "xml_cufe",
+  "xml_issue_date",
   "xml_dian_tercero"
  ],
  "fields": [
@@ -67,19 +70,51 @@
    "label": "Contenido XML"
   },
   {
+   "fieldname": "xml_cufe",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "CUFE",
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "xml_issue_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Fecha emisi\u00f3n",
+   "read_only": 1
+  },
+  {
    "fieldname": "xml_dian_tercero",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "DIAN tercero",
-   "options": "DIAN tercero"
+   "options": "DIAN tercero",
+   "read_only": 1
+  },
+  {
+   "fieldname": "xml_document_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tipo documento",
+   "read_only": 1
+  },
+  {
+   "fieldname": "xml_document_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "ID documento",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-07 21:53:48.416628",
+ "modified": "2026-02-16 00:32:15.267337",
  "modified_by": "Administrator",
  "module": "VA DIAN",
  "name": "DIAN document",
+ "naming_rule": "Expression",
  "owner": "jm@vidalastudillo.com",
  "permissions": [
   {
