@@ -78,6 +78,7 @@ frappe.ui.form.on("DIAN document", {
       });
     });
 
+    // Button to ingest DIAN ZIP file.
     frm.add_custom_button("Importar ZIP DIAN", () => {
       new frappe.ui.FileUploader({
         allow_multiple: false,
@@ -97,5 +98,6 @@ frappe.ui.form.on("DIAN document", {
         },
       });
     });
+
   }
 });
