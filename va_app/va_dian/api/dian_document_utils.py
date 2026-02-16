@@ -80,8 +80,6 @@ def _aux_extract_xml_info_from_dian_document(
 
     file_doc = file_list[0]
 
-    frappe.msgprint("Found XML file: {}".format(file_doc))
-
     return _get_dian_document_object_from_xml_file(
         xml_file_path=file_doc,
     )
@@ -332,7 +330,6 @@ def update_doc_with_xml_info(
     if not docname:
         frappe.throw("Please provide a document to update")
         return None
-    frappe.msgprint(f"DIAN Document {docname} will be updated with XML information...")
 
     # Obtain document to update
     doc = frappe.get_doc("DIAN document", docname)
@@ -369,7 +366,6 @@ def update_doc_with_xml_info(
     )
 
     doc.save(ignore_permissions=True)
-    doc.rename_attached_documents_per_xml_content()
     return True
 
 
