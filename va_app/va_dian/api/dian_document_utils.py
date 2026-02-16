@@ -31,7 +31,7 @@ def aux_get_text(
     return elem.text.strip() if elem is not None and elem.text else None
 
 
-def aux_determine_type_of_document(
+def _aux_determine_type_of_document(
     find_result: ET,
 ) -> str | None:
     """
@@ -116,7 +116,7 @@ def _get_dian_document_object_from_xml_file(
     # DIAN electronic document.
     # ######################################################################
 
-    document_type = aux_determine_type_of_document(
+    document_type = _aux_determine_type_of_document(
         root.find('cbc:DocumentType', document_namespace)
     )
     reg_document_id = root.find('cbc:ParentDocumentID', document_namespace)
