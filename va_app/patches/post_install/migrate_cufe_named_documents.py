@@ -35,12 +35,12 @@ def execute():
 
     docs = frappe.get_all(
         "DIAN document",
-        fields=["name", "cufe"],
+        fields=["name", "xml_cufe"],
     )
 
     for row in docs:
         name = row.name
-        cufe = row.cufe
+        cufe = row.xml_cufe
 
         # Already migrated → skip
         if cufe:
@@ -73,11 +73,11 @@ def _migrate_single_document(old_name: str):
     doc = frappe.get_doc("DIAN document", old_name)
 
     # Defensive check
-    if doc.cufe:
+    if doc.xml_cufe:
         return
 
     # Preserve CUFE
-    doc.cufe = old_name
+    doc.xml_cufe = old_name
 
     # Generate new stable name
     new_name = frappe.model.naming.make_autoname("DIAN-DOC-.YYYY.-.#####")
