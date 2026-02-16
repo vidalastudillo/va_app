@@ -91,6 +91,20 @@
    "label": "DIAN tercero",
    "options": "DIAN tercero",
    "read_only": 1
+  },
+  {
+   "fieldname": "xml_document_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tipo documento",
+   "read_only": 1
+  },
+  {
+   "fieldname": "xml_document_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "ID documento",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
