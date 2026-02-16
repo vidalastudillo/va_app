@@ -78,26 +78,14 @@
       "fieldname": "xml_issue_date",
       "fieldtype": "Date",
       "label": "Fecha emisión",
-      "read_only": 1
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldname": "xml_dian_tercero",
       "fieldtype": "Link",
       "label": "DIAN tercero",
       "options": "DIAN tercero",
-      "read_only": 1
-    },
-    {
-      "fieldname": "processing_section",
-      "fieldtype": "Section Break",
-      "label": "Procesamiento"
-    },
-    {
-      "fieldname": "status",
-      "fieldtype": "Select",
-      "label": "Estado",
-      "options": "Draft\nProcessed\nDuplicate\nError",
-      "default": "Draft",
       "read_only": 1,
       "in_list_view": 1
     }
@@ -109,7 +97,6 @@
   "modified_by": "Administrator",
   "module": "VA DIAN",
   "name": "DIAN document",
-  "title_field": "cufe",
   "owner": "jm@vidalastudillo.com",
   "permissions": [
     {
