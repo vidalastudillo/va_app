@@ -20,6 +20,8 @@ from pathlib import Path
 import frappe
 from frappe.utils.file_manager import save_file
 
+from va_app.va_dian.api.dian_document_utils import get_object_from_xml_file
+
 
 @frappe.whitelist()
 def ingest_dian_zip(
@@ -89,13 +91,16 @@ def ingest_dian_zip(
             dian_doc.representation = pdf_file.file_url
 
         # Persist field bindings
-        dian_doc.save(ignore_permissions=True)
+        # dian_doc.save(ignore_permissions=True)
 
         # ------------------------------------------------------------------
         # XML enrichment.
         # ------------------------------------------------------------------
-        from va_app.va_dian.api.dian_document_utils import update_doc_with_xml_info
-        update_doc_with_xml_info(dian_doc.name)
+        frappe.msgprint("Starting XML enrichment for DIAN document {}, and XML at path {}".format(dian_doc.name, xml_path))
+        dian_doc.xml_content = get_object_from_xml_file(
+            xml_file_path=xml_path,
+        )
+        dian_doc.save(ignore_permissions=True)
 
         return dian_doc.name
 
