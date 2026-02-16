@@ -1,17 +1,17 @@
 /* -----------------------------------------------------------------------------
 
-Copyright (c) 2025, VIDAL & ASTUDILLO Ltda and contributors
+Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
-By JMVA, VIDAL & ASTUDILLO Ltda
-Version 2025-05-04
+By JMVA, VIDAL & ASTUDILLO Ltda.
+Version 2026-02-16
 
 --------------------------------------------------------------------------------
 Propósitos:
 --------------------------------------------------------------------------------
 
-- Extraer la información que contienen los archivos .XML de los documentos
-  electrónicos de la DIAN.
-- Permitir la generación de documentos ERPNext usando la información extraída.
+- Ingerir en ERPNext los documentos electrónicos de la DIAN mediante la
+  información manual proporcionada por el usuario, o automáticamente de un
+  archivo ZIP que contenga los documentos XML/PDF.
 
 --------------------------------------------------------------------------------
 Implementación:
@@ -77,5 +77,64 @@ frappe.ui.form.on("DIAN document", {
         }
       });
     });
+
+    // Button to ingest DIAN ZIP file.
+    frm.add_custom_button("Importar ZIP DIAN", () => {
+      new frappe.ui.FileUploader({
+        allow_multiple: false,
+        restrictions: { allowed_file_types: [".zip"] },
+        on_success(file) {
+          frappe.call({
+            method: "va_app.va_dian.api.dian_zip_ingest.ingest_dian_zip",
+            args: { file_url: file.file_url },
+            freeze: true,
+            callback(r) {
+              frappe.msgprint(
+                __("Documento DIAN creado: {0}", [r.message])
+              );
+              frappe.set_route("Form", "DIAN document", r.message);
+            },
+          });
+        },
+      });
+    });
+
+    // Button to create related document.
+		// Do not allow creation if already linked
+		if (frm.is_new()) return;
+		if (frm.doc.related_document) return;
+
+		frm.add_custom_button(
+			__("Crear documento relacionado"),
+			() => {
+				if (!frm.doc.related_document_type) {
+					frappe.msgprint(__("Seleccione primero el tipo de documento"));
+					return;
+				}
+
+				frappe.call({
+					method: "va_app.va_dian.api.dian_related_document_factory.create_related_document_copying_the_last_one",
+					args: {
+						dian_docname: frm.doc.name,
+					},
+					callback(r) {
+						if (r.message) {
+							frappe.msgprint({
+								title: __("Documento creado"),
+								message: r.message,
+								indicator: "green",
+							});
+
+							frm.reload_doc();
+							frappe.set_route(
+								"Form",
+								frm.doc.related_document_type,
+								r.message
+							);
+						}
+					},
+				});
+			}
+		);
   }
 });
