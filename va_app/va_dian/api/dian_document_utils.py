@@ -2,7 +2,7 @@
 Copyright (c) 2024-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda.
-Version 2026-02-15
+Version 2026-02-16
 ---------------------------------------------------------------------------- """
 
 
@@ -349,6 +349,10 @@ def update_doc_with_xml_info(
     # Persist extracted information
     # ------------------------------------------------------------------
     doc.set(
+        "xml_content",
+        xml_result.as_beauty_text(),
+    )
+    doc.set(
         "xml_cufe",
         xml_result.uuid,
     )
@@ -361,8 +365,12 @@ def update_doc_with_xml_info(
         str(xml_result.sender_party_id),
     )
     doc.set(
-        "xml_content",
-        xml_result.as_beauty_text(),
+        "xml_document_type",
+        xml_result.document_type,
+    )
+    doc.set(
+        "xml_document_id",
+        xml_result.document_id,
     )
 
     doc.save(ignore_permissions=True)
