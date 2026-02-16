@@ -25,14 +25,18 @@ from va_app.va_dian.api.utils import (
 )
 
 
-def aux_get_text(elem: ET) -> str | None:
+def aux_get_text(
+    elem: ET,
+) -> str | None:
     """
     Helper to get text or None if missing.
     """
     return elem.text.strip() if elem is not None and elem.text else None
 
 
-def aux_determine_type_of_document(find_result: ET) -> str | None:
+def aux_determine_type_of_document(
+    find_result: ET,
+) -> str | None:
     """
     Helper to determine the electronic document type from the identification
     text on it.
@@ -47,9 +51,14 @@ def aux_determine_type_of_document(find_result: ET) -> str | None:
             return ElectronicDocument.INDETERMINADO
 
 
-def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
+def _aux_extract_xml_info_from_dian_document(
+    docname: str | None,
+) -> VA_DIAN_Document | None:
     """
-    Helper to provide an object with information contained on the XML document.
+    Returns:
+    - An object `VA_DIAN_Document` for the XML field of the docname received,
+      (if valid)
+    - None, if anything fails.
     """
 
     # Check requested DIAN Document exists.
@@ -64,17 +73,37 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
         filters={
             "attached_to_doctype": "DIAN document",
             "attached_to_name": docname,
-            "file_url": ("like", "%xml%"),
+            "file_url": ['like', '%xml%'],
         },
-        fields=["name", "file_name"],
+        fields=['name'],
+        pluck="name",
     )
     if not file_list:
         frappe.throw("Unable to locate the attached XML file.")
 
     file_doc = file_list[0]
 
+    frappe.msgprint("Found XML file: {}".format(file_doc))
+
+    # return get_object_from_xml_file(file_doc.get_full_path())
+    return get_object_from_xml_file(
+        xml_file_path=file_doc,
+    )
+
+
+# @frappe.whitelist()
+def get_object_from_xml_file(
+    xml_file_path: str | None,
+) -> VA_DIAN_Document | None:
+    """
+    Provides a VA_DIAN_Document object that represents the content
+    of the XML file at the path provided.
+    """
+    if xml_file_path is None:
+        frappe.throw("Received XML file path is None")
+
     # Determine the file path.
-    file_path = get_file_path(file_doc.file_name)
+    file_path = get_file_path(xml_file_path)
 
     # Read the XML file.
     try:
@@ -295,28 +324,37 @@ def aux_extract_xml_info(docname) -> VA_DIAN_Document | None:
 
 
 @frappe.whitelist()
-def update_doc_with_xml_info(docname) -> dict[str, str] | None:
+def update_doc_with_xml_info(
+    docname,
+) -> bool | None:
     """
     Update the `DIAN document` with the information contained on its XML file.
     Returns:
-    - A dict with the information of the document, if successful.
+    - True, if successful.
     - None, otherwise.
     """
 
     if not docname:
         frappe.throw("Please provide a document to update")
-
-    # Obtain results from fecthing XML
-    xml_result = aux_extract_xml_info(docname)
-    if xml_result is None:
         return None
+    frappe.msgprint(f"DIAN Document {docname} will be updated with XML information...")
 
     # Obtain document to update
     doc = frappe.get_doc("DIAN document", docname)
 
-    # Obtain UUID from XML.
+    # Obtain results from fetching XML
+    xml_result = _aux_extract_xml_info_from_dian_document(docname)
+    if xml_result is None:
+        frappe.throw(f"DIAN Document {docname} has not valid XML information on it.")
+        return None
+
+    _nicely_formatted_xml_content = provide_nicely_formatted_dictionary(xml_result.dict())
+    frappe.msgprint(f"DIAN Document {docname} has this XML content: {_nicely_formatted_xml_content}")
+
+    # Obtain CUFE / UUID from XML.
     if xml_result.uuid is None:
         frappe.throw("XML does not contain a valid CUFE / UUID")
+        return None
 
     # ------------------------------------------------------------------
     # Persist extracted information
@@ -331,19 +369,23 @@ def update_doc_with_xml_info(docname) -> dict[str, str] | None:
     )
     doc.set(
         "xml_dian_tercero",
-        str(xml_result.sender_party_id)),
+        str(xml_result.sender_party_id),
+    )
     doc.set(
         "xml_content",
-        provide_nicely_formatted_dictionary(xml_result.dict()),
+        _nicely_formatted_xml_content,
     )
 
     doc.save(ignore_permissions=True)
-    frappe.db.commit()
-    return doc.as_dict()
+    doc.finalize_processing()
+    # return doc.as_dict()
+    return True
 
 
 @frappe.whitelist()
-def update_dian_tercero_with_xml_info(docname) -> str | None:
+def update_dian_tercero_with_xml_info(
+    docname,
+) -> str | None:
     """
     Insert/Update document in `DIAN tercero` using the XML information
     on the table `DIAN Document` for the provided `docname`.
@@ -357,7 +399,7 @@ def update_dian_tercero_with_xml_info(docname) -> str | None:
         return None
 
     # Obtain results from fecthing XML.
-    xml_result = aux_extract_xml_info(docname)
+    xml_result = _aux_extract_xml_info_from_dian_document(docname)
     if xml_result is None:
         return None
     
