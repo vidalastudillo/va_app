@@ -7,4 +7,4 @@ va_app.patches.post_install.rename_deprecated_names_dian_tables
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
-va_app.patches.post_install.migrate_cufe_named_documents
+va_app.patches.post_install.reprocess_dian_document_with_new_name_and_xml_information
