@@ -369,8 +369,7 @@ def update_doc_with_xml_info(
     )
 
     doc.save(ignore_permissions=True)
-    doc.finalize_processing()
-    # return doc.as_dict()
+    doc.rename_attached_documents_per_xml_content()
     return True
 
 
