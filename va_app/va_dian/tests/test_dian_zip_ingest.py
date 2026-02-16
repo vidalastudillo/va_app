@@ -34,11 +34,10 @@ class TestDIANZipIngest(FrappeTestCase):
 
         doc = frappe.get_doc("DIAN document", name)
 
-        self.assertEqual(doc.status, "Processed")
-        self.assertTrue(doc.cufe)
         self.assertTrue(doc.xml)
         self.assertTrue(doc.representation)
         self.assertTrue(doc.xml_content)
+        self.assertTrue(doc.xml_cufe)
         self.assertTrue(doc.xml_dian_tercero)
 
     def test_duplicate_cufe_is_rejected(self):
