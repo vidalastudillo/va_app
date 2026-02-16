@@ -73,6 +73,18 @@ def create_related_document(dian_docname: str) -> str:
         new_doc.custom_dian_documento = None
 
     # ------------------------------------------------------------------
+    # Reset workflow / submission state
+    # ------------------------------------------------------------------
+
+    new_doc.docstatus = 0
+
+    if hasattr(new_doc, "workflow_state"):
+        new_doc.workflow_state = None
+
+    if hasattr(new_doc, "status"):
+        new_doc.status = "Draft"
+        
+    # ------------------------------------------------------------------
     # Save new document
     # ------------------------------------------------------------------
 
