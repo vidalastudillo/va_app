@@ -59,13 +59,17 @@ def create_related_document_copying_the_last_one(
     new_doc.name = None  # Ensure new document
 
     # ------------------------------------------------------------------
-    # Adjust posting date if needed.
+    # Adjust posting and due dates if needed.
     # ------------------------------------------------------------------
 
-    if hasattr(new_doc, "posting_date") and dian.xml_issue_date:
+    if dian.xml_issue_date:
         xml_date = getdate(dian.xml_issue_date)
-        if new_doc.posting_date != xml_date:
+        if hasattr(new_doc, "posting_date") and \
+                new_doc.posting_date != xml_date:
             new_doc.posting_date = xml_date
+        if hasattr(new_doc, "due_date") and \
+                new_doc.due_date != xml_date:
+            new_doc.due_date = xml_date
 
     # ------------------------------------------------------------------
     # Clear custom_dian_documento if present.
@@ -73,6 +77,19 @@ def create_related_document_copying_the_last_one(
 
     if hasattr(new_doc, "custom_dian_documento"):
         new_doc.custom_dian_documento = None
+
+    # ------------------------------------------------------------------
+    # Update document ID and its date if present.
+    # ------------------------------------------------------------------
+
+    if hasattr(new_doc, "bill_no") and \
+            dian.xml_document_id and \
+            dian.xml_issue_date:
+        new_doc.bill_no = dian.xml_document_id
+        new_doc.bill_date = dian.xml_issue_date
+    else:
+        new_doc.bill_no = None
+        new_doc.bill_date = None
 
     # ------------------------------------------------------------------
     # Reset workflow / submission state.
