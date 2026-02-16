@@ -3,7 +3,7 @@
 Copyright (c) 2025-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda.
-Version 2026-02-15
+Version 2026-02-16
 
 --------------------------------------------------------------------------------
 Propósitos:
@@ -98,6 +98,42 @@ frappe.ui.form.on("DIAN document", {
         },
       });
     });
+
+    // Button to create related document.
+    if (!frm.is_new()) {
+			frm.add_custom_button(
+				__("Crear documento relacionado"),
+				() => {
+					if (!frm.doc.related_document_type) {
+						frappe.msgprint(__("Seleccione primero el tipo de documento"));
+						return;
+					}
+
+					frappe.call({
+						method: "va_app.va_dian.api.dian_related_document_factory.create_related_document",
+						args: {
+							dian_docname: frm.doc.name,
+						},
+						callback(r) {
+							if (r.message) {
+								frappe.msgprint({
+									title: __("Documento creado"),
+									message: r.message,
+									indicator: "green",
+								});
+
+								frm.reload_doc();
+								frappe.set_route(
+									"Form",
+									frm.doc.related_document_type,
+									r.message
+								);
+							}
+						},
+					});
+				}
+			);
+		}
 
   }
 });
