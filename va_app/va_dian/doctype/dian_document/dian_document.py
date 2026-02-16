@@ -99,14 +99,15 @@ class DIANdocument(Document):
 		Renames XML and PDF using extracted party and issue date.
 		"""
 
-		if not self.xml_dian_tercero:
-			frappe.throw("Tercero DIAN no determinado; No es posible renombrar los archivos adjuntos")
-
-		if not self.xml_issue_date:
-			frappe.throw("Fecha de emisión no determinada; No es posible renombrar los archivos adjuntos")
-
 		party = self.xml_dian_tercero
 		issue_date = self.xml_issue_date
+
+		if not party:
+			frappe.throw("Tercero DIAN no determinado; No es posible renombrar los archivos adjuntos")
+
+		if not issue_date:
+			frappe.throw("Fecha de emisión no determinada; No es posible renombrar los archivos adjuntos")
+
 		date_prefix = getdate(issue_date).strftime("%y-%m-%d")
 
 		for field in ("xml", "representation"):
