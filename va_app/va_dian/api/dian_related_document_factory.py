@@ -11,53 +11,55 @@ from frappe.utils import getdate
 
 
 @frappe.whitelist()
-def create_related_document(dian_docname: str) -> str:
+def create_related_document_copying_the_last_one(
+    dian_docname: str,
+) -> str:
     """
     Creates a related ERPNext document from the last document
-    of the selected type for the DIAN tercero.
+    of the selected type for the `DIAN tercero`.
     """
 
     if not dian_docname:
-        frappe.throw("DIAN document name is required")
+        frappe.throw("Un documento `DIAN document` es requiredo")
 
     dian = frappe.get_doc("DIAN document", dian_docname)
 
     if not dian.xml_dian_tercero:
-        frappe.throw("xml_dian_tercero is required")
+        frappe.throw("`DIAN Tercero` es requiredo")
 
     if not dian.related_document_type:
-        frappe.throw("related_document_type is required")
+        frappe.throw("`Tipo de documento` es requiredo")
 
     tercero = frappe.get_doc("DIAN tercero", dian.xml_dian_tercero)
     nit = tercero.nit
 
     if not nit:
-        frappe.throw("DIAN tercero does not have a NIT")
+        frappe.throw("`DIAN tercero` no tiene especificado un `NIT`")
 
     doctype = dian.related_document_type
 
     # ------------------------------------------------------------------
-    # Find last document for the tercero and doctype
+    # Find last document for the tercero and doctype.
     # ------------------------------------------------------------------
 
     source_docname = _find_last_document(doctype, nit, tercero.name)
 
     if not source_docname:
         frappe.throw(
-            f"No existing {doctype} found for DIAN tercero {tercero.name}"
+            f"Para `DIAN tercero` {tercero.name} no existe documento previo de tipo {doctype} para hacer una copia"
         )
 
     source_doc = frappe.get_doc(doctype, source_docname)
 
     # ------------------------------------------------------------------
-    # Copy document (unsaved)
+    # Copy document (unsaved).
     # ------------------------------------------------------------------
 
     new_doc = frappe.copy_doc(source_doc)
     new_doc.name = None  # Ensure new document
 
     # ------------------------------------------------------------------
-    # Adjust posting date if needed
+    # Adjust posting date if needed.
     # ------------------------------------------------------------------
 
     if hasattr(new_doc, "posting_date") and dian.xml_issue_date:
@@ -66,14 +68,14 @@ def create_related_document(dian_docname: str) -> str:
             new_doc.posting_date = xml_date
 
     # ------------------------------------------------------------------
-    # Clear custom_dian_documento if present
+    # Clear custom_dian_documento if present.
     # ------------------------------------------------------------------
 
     if hasattr(new_doc, "custom_dian_documento"):
         new_doc.custom_dian_documento = None
 
     # ------------------------------------------------------------------
-    # Reset workflow / submission state
+    # Reset workflow / submission state.
     # ------------------------------------------------------------------
 
     new_doc.docstatus = 0
@@ -85,14 +87,14 @@ def create_related_document(dian_docname: str) -> str:
         new_doc.status = "Draft"
         
     # ------------------------------------------------------------------
-    # Save new document
+    # Save new document.
     # ------------------------------------------------------------------
 
     new_doc.insert(ignore_permissions=True)
     frappe.db.commit()
 
     # ------------------------------------------------------------------
-    # Link back to DIAN document
+    # Link back to DIAN document.
     # ------------------------------------------------------------------
 
     dian.related_document = new_doc.name
@@ -105,10 +107,14 @@ def create_related_document(dian_docname: str) -> str:
 # -----------------------------------------------------------------------------
 
 
-def _find_last_document(doctype: str, nit: str, tercero_name: str) -> str | None:
+def _find_last_document(
+    doctype: str,
+    nit: str,
+    tercero_name: str,
+) -> str | None:
     """
     Returns the name of the most recent document of the given type
-    associated with the DIAN tercero.
+    associated with the `DIAN tercero`.
     """
 
     filters = {}
