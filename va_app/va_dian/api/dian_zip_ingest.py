@@ -90,14 +90,8 @@ def ingest_dian_zip(
             )
             dian_doc.representation = pdf_file.file_url
 
-        # ------------------------------------------------------------------
-        # XML enrichment.
-        # ------------------------------------------------------------------
-        # `update_doc_with_xml_info` needs the document to be saved beforehand,
-        #  so we have a valid content.
         dian_doc.save(ignore_permissions=True)
         dian_doc.reload()
-        update_doc_with_xml_info(dian_doc.name)
 
         return dian_doc.name
 
