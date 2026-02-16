@@ -113,7 +113,7 @@ frappe.ui.form.on("DIAN document", {
 				}
 
 				frappe.call({
-					method: "va_app.va_dian.api.dian_related_document_factory.create_related_document",
+					method: "va_app.va_dian.api.dian_related_document_factory.create_related_document_copying_the_last_one",
 					args: {
 						dian_docname: frm.doc.name,
 					},
