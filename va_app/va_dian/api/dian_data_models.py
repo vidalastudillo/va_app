@@ -13,7 +13,8 @@ Data models.
 
 from enum import StrEnum
 from dataclasses import dataclass, field
-from va_app.va_dian.api.utils import recursive_dataclass_to_dict
+
+from va_app.va_dian.api.utils import provide_nicely_formatted_dictionary, recursive_dataclass_to_dict
 
 
 class ElectronicDocument(StrEnum):
@@ -121,3 +122,10 @@ class VA_DIAN_Document:
         responses.
         """
         return recursive_dataclass_to_dict(self)
+
+    def as_beauty_text(self):
+        """
+        Text that may be used for a nice representation of the extracted
+        content.
+        """
+        return provide_nicely_formatted_dictionary(self.dict())
