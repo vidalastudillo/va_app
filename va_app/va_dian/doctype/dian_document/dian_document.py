@@ -16,14 +16,12 @@ from frappe.utils import getdate
 
 class DIANdocument(Document):
 
-	def after_insert(self):
+	def after_save(self):
 		"""
-		After inserting a `DIAN document`, if there is an attached XML file,
-		the related files will be renamed with content of the XML.
+		After inserting a `DIAN document` its related files will be renamed
+		with content of the XML.
 		"""
-
-		if self.xml:
-			self.rename_attached_documents_per_xml_content()
+		self.rename_attached_documents_per_xml_content()
 
 	def rename_attached_documents_per_xml_content(self):
 		"""
