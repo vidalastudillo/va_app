@@ -2,7 +2,7 @@
 Copyright (c) 2024-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda.
-Version 2026-02-16
+Version 2026-02-17
 ---------------------------------------------------------------------------- """
 
 
@@ -19,6 +19,9 @@ from va_app.va_dian.api.dian_data_models import (
 )
 from va_app.va_dian.api.dian_tercero_utils import (
     upsert_dian_tercero,
+)
+from va_app.va_dian.api.dian_document_rename_attachments import (
+    rename_dian_attachments
 )
 
 
@@ -374,6 +377,7 @@ def update_doc_with_xml_info(
     )
 
     doc.save(ignore_permissions=True)
+    rename_dian_attachments(docname)
     return True
 
 
