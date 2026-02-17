@@ -446,7 +446,7 @@ def extract_minimal_xml_metadata(xml_path: str) -> MinimalDIANMeta:
 
     issue_date_elem = root.find('cbc:IssueDate', ns)
     party_id_elem = root.find(
-        'cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID',
+        'cac:SenderParty/cac:PartyTaxScheme/cbc:RegistrationName',
         ns,
     )
 
