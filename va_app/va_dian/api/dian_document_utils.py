@@ -6,9 +6,12 @@ Version 2026-02-17
 ---------------------------------------------------------------------------- """
 
 
+from dataclasses import dataclass
+from datetime import date
+import xml.etree.ElementTree as ET
+
 import frappe
 from frappe.utils.file_manager import get_file_path
-import xml.etree.ElementTree as ET
 
 from va_app.va_dian.api.dian_data_models import (
     VA_DIAN_Document,
@@ -424,6 +427,42 @@ def update_dian_tercero_with_xml_info(
         pais=xml_result.sender_address.pais,
     )
 
-    result_from_upsert = upsert_dian_tercero(tercero_data.dict())
 
-    return result_from_upsert
+@dataclass
+class MinimalDIANMeta:
+    issue_date: date | None
+    party_id: str | None
+
+
+def extract_minimal_xml_metadata(xml_path: str) -> MinimalDIANMeta:
+    """
+    Extract only the data required for safe file naming.
+    No DB access. No side effects.
+    """
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    ns = {
+        'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+        'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+    }
+
+    issue_date_elem = root.find('cbc:IssueDate', ns)
+    party_id_elem = root.find(
+        'cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID',
+        ns,
+    )
+
+    issue_date = (
+        date.fromisoformat(issue_date_elem.text.strip())
+        if issue_date_elem is not None and issue_date_elem.text
+        else None
+    )
+
+    party_id = party_id_elem.text.strip() if party_id_elem is not None else None
+
+    return MinimalDIANMeta(
+        issue_date=issue_date,
+        party_id=party_id,
+    )

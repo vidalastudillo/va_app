@@ -2,7 +2,7 @@
 Copyright (c) 2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda.
-Version 2026-02-15
+Version 2026-02-17
 
 --------------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@ DIAN Electronic document ingestion.
 
 
 import os
+import re
 import zipfile
 import tempfile
 import shutil
@@ -20,7 +21,10 @@ from pathlib import Path
 import frappe
 from frappe.utils.file_manager import save_file
 
-from va_app.va_dian.api.dian_document_utils import update_doc_with_xml_info
+from va_app.va_dian.api.dian_document_utils import extract_minimal_xml_metadata
+
+
+MAX_STEM_LEN = 80
 
 
 @frappe.whitelist()
@@ -29,7 +33,7 @@ def ingest_dian_zip(
 ) -> str:
     """
     Receives a ZIP file uploaded to ERPNext, extracts XML + PDF,
-    creates a DIAN document, and triggers post-processing.
+    creates a DIAN document attaching renamed files.
 
     Returns:
         The name of the newly created DIAN document
@@ -58,18 +62,38 @@ def ingest_dian_zip(
 
         xml_path, pdf_path = _find_xml_and_pdf(tmp_dir)
 
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
+        # Extract metadata BEFORE saving files
+        # --------------------------------------------------------------
+        meta = extract_minimal_xml_metadata(xml_path)
+
+        if not meta.issue_date or not meta.party_id:
+            frappe.throw("XML does not contain required metadata")
+
+        xml_filename = build_final_filename(
+            issue_date=meta.issue_date,
+            party=meta.party_id,
+            original_path=xml_path,
+        )
+
+        pdf_filename = build_final_filename(
+            issue_date=meta.issue_date,
+            party=meta.party_id,
+            original_path=pdf_path,
+        )
+
+        # --------------------------------------------------------------
         # Create DIAN document.
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
         dian_doc = frappe.new_doc("DIAN document")
         dian_doc.insert(ignore_permissions=True)
 
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
         # Attach XML.
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
         with open(xml_path, "rb") as f:
             xml_file = save_file(
-                fname=Path(xml_path).name,
+                fname=xml_filename,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
@@ -77,12 +101,12 @@ def ingest_dian_zip(
             )
             dian_doc.xml = xml_file.file_url
 
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
         # Attach PDF.
-        # ------------------------------------------------------------------
+        # --------------------------------------------------------------
         with open(pdf_path, "rb") as f:
             pdf_file = save_file(
-                fname=Path(pdf_path).name,
+                fname=pdf_filename,
                 content=f.read(),
                 dt="DIAN document",
                 dn=dian_doc.name,
@@ -91,15 +115,12 @@ def ingest_dian_zip(
             dian_doc.representation = pdf_file.file_url
 
         dian_doc.save(ignore_permissions=True)
-        dian_doc.reload()
 
         return dian_doc.name
 
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-
-# -------------------------------------------------------------------
 
 def _find_xml_and_pdf(base_dir: str) -> tuple[str, str]:
     xml = pdf = None
@@ -119,3 +140,33 @@ def _find_xml_and_pdf(base_dir: str) -> tuple[str, str]:
         frappe.throw("ZIP does not contain a PDF file")
 
     return xml, pdf
+
+
+def _sanitize_filename_part(value: str) -> str:
+    """
+    Keep only filesystem-safe characters.
+    """
+    value = value.strip()
+    value = re.sub(r"[^\w\s.\-]", "", value, flags=re.UNICODE)
+    value = re.sub(r"\s+", " ", value)
+    return value
+
+
+def build_final_filename(
+    issue_date,
+    party: str,
+    original_path: str,
+) -> str:
+    """
+    Build filename according to:
+    <Issue Date> <Party> <Original filename truncated>.<ext>
+    """
+    original = Path(original_path)
+
+    safe_stem = _sanitize_filename_part(original.stem)
+    safe_stem = safe_stem[:MAX_STEM_LEN]
+
+    date_prefix = issue_date.strftime("%y-%m-%d")
+    party = _sanitize_filename_part(party)
+
+    return f"{date_prefix} {party} - {safe_stem}{original.suffix.lower()}"
