@@ -1,8 +1,8 @@
 """ ----------------------------------------------------------------------------
-Copyright (c) 2024-2025, VIDAL & ASTUDILLO Ltda and contributors.
+Copyright (c) 2024-2026, VIDAL & ASTUDILLO Ltda and contributors.
 For license information, please see license.txt
 By JMVA, VIDAL & ASTUDILLO Ltda.
-Version 2025-05-09
+Version 2026-02-17
 
 * PROMPT USED (for the draft of this module) *
 
@@ -193,6 +193,7 @@ def execute(filters=None):
         fields=["account", "party_type", "party", "voucher_type", "voucher_no", "debit", "credit"],
         filters={"posting_date": ["between", [from_date, to_date]]},
         order_by="account, voucher_type, posting_date",
+        # pluck="name",  # TODO: Not sure if this is required.
 	)
 
     # We'll use a dict to aggregate the results. Its key is a tuple composed
