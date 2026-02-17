@@ -23,9 +23,6 @@ from va_app.va_dian.api.dian_data_models import (
 from va_app.va_dian.api.dian_tercero_utils import (
     upsert_dian_tercero,
 )
-from va_app.va_dian.api.dian_document_rename_attachments import (
-    rename_dian_attachments
-)
 
 
 def aux_get_text(
@@ -380,7 +377,6 @@ def update_doc_with_xml_info(
     )
 
     doc.save(ignore_permissions=True)
-    rename_dian_attachments(docname)
     return True
 
 
