@@ -1,0 +1,39 @@
+{
+  "doctype": "DocType",
+  "name": "DIAN_Certificado_Detalle",
+  "module": "va_dian",
+  "istable": 1,
+  "editable_grid": 1,
+  "fields": [
+    {
+      "fieldname": "retention_account",
+      "label": "Retention Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "concepto",
+      "label": "Concept",
+      "fieldtype": "Data",
+      "reqd": 1
+    },
+    {
+      "fieldname": "base_amount",
+      "label": "Base Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "rate",
+      "label": "Rate (%)",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "retained_amount",
+      "label": "Retained Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    }
+  ]
+}

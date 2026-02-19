@@ -1,0 +1,109 @@
+{% set tercero = frappe.get_doc("DIAN tercero", doc.dian_tercero) %}
+{% set empresa = frappe.get_doc("Company", frappe.defaults.get_global_default("company")) %}
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .section {
+    margin-top: 15px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #000;
+    padding: 4px;
+    text-align: right;
+  }
+  th {
+    background-color: #f0f0f0;
+    text-align: center;
+  }
+  .left {
+    text-align: left;
+  }
+  .total {
+    font-weight: bold;
+  }
+</style>
+
+<div class="header">
+  <h2>
+    {{ doc.certificado_config }}
+  </h2>
+  <h3>
+    Certificado Tributario
+  </h3>
+  <p>
+    Periodo: {{ doc.from_date }} a {{ doc.to_date }}
+  </p>
+</div>
+
+<div class="section">
+  <strong>Agente de Retención</strong><br>
+  {{ empresa.company_name }}<br>
+  NIT: {{ empresa.tax_id }}
+</div>
+
+<div class="section">
+  <strong>Sujeto de Retención</strong><br>
+  {{ tercero.nombre_completo }}<br>
+  NIT: {{ tercero.nit }}-{{ tercero.div }}<br>
+  {% if tercero.direccion_principal %}
+    Dirección: {{ tercero.direccion_principal }}<br>
+  {% endif %}
+  {% if tercero.ciudad_municipio %}
+    Ciudad: {{ tercero.ciudad_municipio }}
+  {% endif %}
+</div>
+
+<div class="section">
+  <strong>Detalle de Retenciones</strong>
+
+  <table>
+    <thead>
+      <tr>
+        <th class="left">Concepto</th>
+        <th class="left">Cuenta</th>
+        <th>Base</th>
+        <th>Tarifa %</th>
+        <th>Valor Retenido</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in doc.detalles %}
+      <tr>
+        <td class="left">{{ d.concepto }}</td>
+        <td class="left">{{ d.retention_account }}</td>
+        <td>{{ frappe.format_value(d.base_amount, {"fieldtype": "Currency"}) }}</td>
+        <td>{{ d.rate or "" }}</td>
+        <td>{{ frappe.format_value(d.retained_amount, {"fieldtype": "Currency"}) }}</td>
+      </tr>
+      {% endfor %}
+      <tr class="total">
+        <td colspan="4" class="left">TOTAL RETENIDO</td>
+        <td>{{ frappe.format_value(doc.total_retention, {"fieldtype": "Currency"}) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <p>
+    El presente certificado se expide para los fines previstos en la legislación tributaria colombiana.
+  </p>
+</div>
+
+<div class="section">
+  <p>
+    Fecha de expedición: {{ frappe.utils.today() }}
+  </p>
+</div>

@@ -1,0 +1,48 @@
+{
+  "doctype": "DocType",
+  "name": "DIAN_Certificado_Config",
+  "module": "va_dian",
+  "custom": 0,
+  "istable": 0,
+  "editable_grid": 0,
+  "track_changes": 1,
+  "autoname": "field:certificado_tipo",
+  "fields": [
+    {
+      "fieldname": "certificado_tipo",
+      "label": "Certificate Type",
+      "fieldtype": "Select",
+      "options": "Retención en la Fuente\nRetención de IVA\nRetención de ICA",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "retention_account",
+      "label": "Retention Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "description",
+      "label": "Description",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "sort_field": "certificado_tipo",
+  "sort_order": "ASC",
+  "allow_rename": 0,
+  "allow_import": 1,
+  "allow_events_in_timeline": 0,
+  "allow_copy": 0,
+  "index_web_pages_for_search": 0
+}

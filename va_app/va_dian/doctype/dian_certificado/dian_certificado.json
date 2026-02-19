@@ -1,0 +1,70 @@
+{
+  "doctype": "DocType",
+  "name": "DIAN_Certificado",
+  "module": "VA DIAN",
+  "custom": 0,
+  "istable": 0,
+  "track_changes": 1,
+  "autoname": "format:DIAN-CERT-{YYYY}-{#####}",
+  "fields": [
+    {
+      "fieldname": "certificado_config",
+      "label": "Certificate Configuration",
+      "fieldtype": "Link",
+      "options": "DIAN_Certificado_Config",
+      "reqd": 1
+    },
+    {
+      "fieldname": "dian_tercero",
+      "label": "DIAN Tercero",
+      "fieldtype": "Link",
+      "options": "DIAN tercero",
+      "reqd": 1
+    },
+    {
+      "fieldname": "from_date",
+      "label": "From Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "to_date",
+      "label": "To Date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "total_retention",
+      "label": "Total Retained Amount",
+      "fieldtype": "Currency",
+      "reqd": 1
+    },
+    {
+      "fieldname": "detalles",
+      "label": "Certificate Details",
+      "fieldtype": "Table",
+      "options": "DIAN_Certificado_Detalle",
+      "reqd": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "Accounts Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "print": 1
+    },
+    {
+      "role": "Accounts User",
+      "read": 1,
+      "print": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "allow_rename": 0,
+  "allow_import": 0,
+  "allow_copy": 0
+}
