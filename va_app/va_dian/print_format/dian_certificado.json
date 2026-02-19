@@ -1,0 +1,10 @@
+{
+  "doctype": "Print Format",
+  "name": "DIAN Certificado Tributario",
+  "doc_type": "DIAN_Certificado",
+  "module": "VA DIAN",
+  "standard": "Yes",
+  "custom_format": 1,
+  "print_format_type": "Jinja",
+  "html": ""
+}

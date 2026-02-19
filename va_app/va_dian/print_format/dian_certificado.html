@@ -1,5 +1,4 @@
 {% set tercero = frappe.get_doc("DIAN tercero", doc.dian_tercero) %}
-{% set empresa = frappe.get_doc("Company", frappe.defaults.get_global_default("company")) %}
 
 <style>
   body {
@@ -16,94 +15,104 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 8px;
   }
   th, td {
     border: 1px solid #000;
-    padding: 4px;
+    padding: 5px;
     text-align: right;
   }
   th {
     background-color: #f0f0f0;
-    text-align: center;
   }
   .left {
     text-align: left;
   }
-  .total {
-    font-weight: bold;
-  }
 </style>
 
 <div class="header">
-  <h2>
-    {{ doc.certificado_config }}
-  </h2>
   <h3>
-    Certificado Tributario
+    CERTIFICADO DE
+    {% if doc.certificate_type == "RET_FUENTE" %}
+      RETENCIÓN EN LA FUENTE
+    {% elif doc.certificate_type == "RET_IVA" %}
+      RETENCIÓN DE IVA
+    {% elif doc.certificate_type == "RET_ICA" %}
+      RETENCIÓN DE INDUSTRIA Y COMERCIO
+    {% endif %}
   </h3>
   <p>
-    Periodo: {{ doc.from_date }} a {{ doc.to_date }}
+    Año gravable {{ doc.year }}
   </p>
 </div>
 
 <div class="section">
-  <strong>Agente de Retención</strong><br>
-  {{ empresa.company_name }}<br>
-  NIT: {{ empresa.tax_id }}
+  <strong>Agente Retenedor:</strong><br>
+  {{ doc.company }}<br>
 </div>
 
 <div class="section">
-  <strong>Sujeto de Retención</strong><br>
+  <strong>Tercero:</strong><br>
   {{ tercero.nombre_completo }}<br>
-  NIT: {{ tercero.nit }}-{{ tercero.div }}<br>
-  {% if tercero.direccion_principal %}
-    Dirección: {{ tercero.direccion_principal }}<br>
-  {% endif %}
-  {% if tercero.ciudad_municipio %}
-    Ciudad: {{ tercero.ciudad_municipio }}
-  {% endif %}
+  NIT {{ tercero.nit }}{% if tercero.dv %}-{{ tercero.dv }}{% endif %}<br>
+  {{ tercero.direccion or "" }}
 </div>
 
+{% if doc.municipio %}
 <div class="section">
-  <strong>Detalle de Retenciones</strong>
+  <strong>Municipio:</strong> {{ doc.municipio }}
+</div>
+{% endif %}
 
+<div class="section">
   <table>
     <thead>
       <tr>
-        <th class="left">Concepto</th>
-        <th class="left">Cuenta</th>
+        <th class="left">Cuenta Base</th>
+        <th class="left">Cuenta Retención</th>
         <th>Base</th>
-        <th>Tarifa %</th>
         <th>Valor Retenido</th>
       </tr>
     </thead>
     <tbody>
-      {% for d in doc.detalles %}
+      {% for row in doc.details %}
       <tr>
-        <td class="left">{{ d.concepto }}</td>
-        <td class="left">{{ d.retention_account }}</td>
-        <td>{{ frappe.format_value(d.base_amount, {"fieldtype": "Currency"}) }}</td>
-        <td>{{ d.rate or "" }}</td>
-        <td>{{ frappe.format_value(d.retained_amount, {"fieldtype": "Currency"}) }}</td>
+        <td class="left">{{ row.base_account }}</td>
+        <td class="left">{{ row.retention_account }}</td>
+        <td>{{ frappe.format(row.base_amount, {"fieldtype": "Currency"}) }}</td>
+        <td>{{ frappe.format(row.retained_amount, {"fieldtype": "Currency"}) }}</td>
       </tr>
       {% endfor %}
-      <tr class="total">
-        <td colspan="4" class="left">TOTAL RETENIDO</td>
-        <td>{{ frappe.format_value(doc.total_retention, {"fieldtype": "Currency"}) }}</td>
-      </tr>
     </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2" class="left">TOTALES</th>
+        <th>{{ frappe.format(doc.total_base, {"fieldtype": "Currency"}) }}</th>
+        <th>{{ frappe.format(doc.total_retained, {"fieldtype": "Currency"}) }}</th>
+      </tr>
+    </tfoot>
   </table>
 </div>
 
+{% set legends = [] %}
+{% for row in doc.details %}
+  {% set cfg = frappe.get_doc("DIAN_CertificadoConfig", row.config_reference) %}
+  {% if cfg.print_legend and cfg.print_legend not in legends %}
+    {% set _ = legends.append(cfg.print_legend) %}
+  {% endif %}
+{% endfor %}
+
+{% if legends %}
 <div class="section">
-  <p>
-    El presente certificado se expide para los fines previstos en la legislación tributaria colombiana.
-  </p>
+  <strong>Observaciones legales:</strong>
+  <ul>
+    {% for l in legends %}
+      <li>{{ l }}</li>
+    {% endfor %}
+  </ul>
 </div>
+{% endif %}
 
 <div class="section">
-  <p>
-    Fecha de expedición: {{ frappe.utils.today() }}
-  </p>
+  Certificado expedido el {{ frappe.utils.formatdate(doc.creation) }}.
 </div>
