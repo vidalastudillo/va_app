@@ -1,48 +1,51 @@
 {
   "doctype": "DocType",
-  "name": "DIAN_Certificado_Config",
-  "module": "va_dian",
-  "custom": 0,
+  "name": "DIAN_CertificadoConfig",
+  "module": "VA DIAN",
+  "custom": 1,
   "istable": 0,
-  "editable_grid": 0,
-  "track_changes": 1,
-  "autoname": "field:certificado_tipo",
   "fields": [
     {
-      "fieldname": "certificado_tipo",
-      "label": "Certificate Type",
+      "fieldname": "certificate_type",
       "fieldtype": "Select",
-      "options": "Retención en la Fuente\nRetención de IVA\nRetención de ICA",
-      "reqd": 1,
-      "unique": 1
-    },
-    {
-      "fieldname": "retention_account",
-      "label": "Retention Account",
-      "fieldtype": "Link",
-      "options": "Account",
+      "label": "Tipo de Certificado",
+      "options": "RET_FUENTE\nRET_IVA\nRET_ICA",
       "reqd": 1
     },
     {
-      "fieldname": "description",
-      "label": "Description",
-      "fieldtype": "Small Text"
-    }
-  ],
-  "permissions": [
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    },
     {
-      "role": "Accounts Manager",
-      "read": 1,
-      "write": 1,
-      "create": 1,
-      "delete": 1
+      "fieldname": "municipio",
+      "fieldtype": "Data",
+      "label": "Municipio",
+      "depends_on": "eval:doc.certificate_type == 'RET_ICA'"
+    },
+    {
+      "fieldname": "print_legend",
+      "fieldtype": "Small Text",
+      "label": "Texto Legal para Impresión"
+    },
+    {
+      "fieldname": "valid_from",
+      "fieldtype": "Date",
+      "label": "Válido Desde"
+    },
+    {
+      "fieldname": "valid_to",
+      "fieldtype": "Date",
+      "label": "Válido Hasta"
+    },
+    {
+      "fieldname": "accounts",
+      "fieldtype": "Table",
+      "label": "Cuentas",
+      "options": "DIAN_CertificadoConfigCuenta",
+      "reqd": 1
     }
-  ],
-  "sort_field": "certificado_tipo",
-  "sort_order": "ASC",
-  "allow_rename": 0,
-  "allow_import": 1,
-  "allow_events_in_timeline": 0,
-  "allow_copy": 0,
-  "index_web_pages_for_search": 0
+  ]
 }

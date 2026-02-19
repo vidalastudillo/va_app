@@ -1,0 +1,23 @@
+{
+  "doctype": "DocType",
+  "name": "DIAN_CertificadoConfigCuenta",
+  "module": "VA DIAN",
+  "custom": 1,
+  "istable": 1,
+  "fields": [
+    {
+      "fieldname": "base_account",
+      "fieldtype": "Link",
+      "label": "Cuenta Base de Retención",
+      "options": "Account",
+      "reqd": 1
+    },
+    {
+      "fieldname": "retention_account",
+      "fieldtype": "Link",
+      "label": "Cuenta Valor de Retención",
+      "options": "Account",
+      "reqd": 1
+    }
+  ]
+}
